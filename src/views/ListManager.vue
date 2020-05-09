@@ -1,35 +1,92 @@
 <template>
-    <div>
-        <header class="app-header">
-            <div class="main-header">
-                <div class="title">{{title}}</div>
-            </div>
-        </header>
-        <section class="app-content">
+    <div class="page">
+        <PageHeader :title="title" />
+        <section class="page-content">
             <MainList :lists="lists" @itemPress="onListPress" @itemEdit="onListEdit" @itemDelete="onListDelete" />
             <Confirmation id="confirmationDialog" :message="message" @yes="onDeleteConfirm" @no="onDeleteCancel" />
         </section>
-        <footer class="app-footer">
-            <ui5-button design="Transparent" icon="delete">Remove</ui5-button>
+        <PageFooter>
             <ui5-button design="Emphasized" icon="add">Create</ui5-button>
-        </footer>
+        </PageFooter>
     </div>
 </template>
 
 <script>
+import axios from 'axios'
 import '@ui5/webcomponents/dist/Button'
 
 import '@ui5/webcomponents-icons/dist/icons/delete'
 import '@ui5/webcomponents-icons/dist/icons/add'
 
-// import MainList from './components/MainList'
-// import Confirmation from '/src/components/Confirmation'
+import MainList from '@/components/MainList'
+import Confirmation from '@/components/TheConfirmation'
+import PageHeader from '@/components/TheHeader'
+import PageFooter from '@/components/TheFooter'
 
 export default {
     name: 'ListManager',
     components: {
-        // MainList
-        // Confirmation
+        MainList,
+        Confirmation,
+        PageHeader,
+        PageFooter
+    },
+    data () {
+        return {
+            title: 'My Lists',
+            lists: [],
+            message: ''
+        }
+    },
+    mounted () {
+        axios
+            .get('./static/data/mainlist.json')
+            .then(response => (this.lists = response.data))
+    },
+    methods: {
+        onDeleteConfirm () {
+            this.resolveConfirm()
+        },
+        onDeleteCancel () {
+            this.rejectConfirm()
+        },
+        confirmDialog (message) {
+            var dialog = document.getElementById('confirmationDialog')
+            return new Promise((resolve, reject) => {
+                this.resolveConfirm = resolve
+                this.rejectConfirm = reject
+                dialog.open()
+            })
+        },
+        onListPress (listId) {
+            this.$router.push({ name: 'list', params: { id: listId } })
+        },
+        onListDelete (list) {
+            // var itemToDelete = this.lists.reduce((result, item, index) => {
+            //     if (item.id + '' === listId) {
+            //         result = {
+            //             index: index,
+            //             item: item
+            //         }
+            //     }
+            //     return result
+            // }, {})
+            var index = this.lists.indexOf(list)
+
+            this.message = 'Are you sure to delete list ' + list.name + '?'
+            var self = this
+            var dialog = document.getElementById('confirmationDialog')
+            this.confirmDialog().then(() => {
+                self.lists.splice(index, 1)
+            }).then(() => {
+                dialog.close()
+            }).catch(() => {
+                dialog.close()
+            })
+        },
+        onListEdit (listId) {
+            alert('Edit List' + listId)
+        }
     }
 }
 </script>

@@ -28,7 +28,7 @@ import '@ui5/webcomponents-icons/dist/icons/favorite-list'
 import '@ui5/webcomponents-icons/dist/icons/task'
 
 export default {
-    name: 'MainList',
+    name: 'main-list',
     props: ['lists'],
     methods: {
         onItemClick (event) {

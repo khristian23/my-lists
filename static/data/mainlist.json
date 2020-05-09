@@ -63,26 +63,4 @@
     "type": "ShoppingList",
     "items": 10,
     "icon": "cart"
-},
-{
-    "id": 10,
-    "name": "My To Do List",
-    "description": "My personal To Do list",
-    "type": "ToDoList",
-    "items": 2,
-    "icon": "task"
-}, {
-    "id": 11,
-    "name": "My Wish List",
-    "description": "",
-    "type": "WishList",
-    "items": 5,
-    "icon": "favorite-list"
-}, {
-    "id": 12,
-    "name": "My Shopping List",
-    "description": "My amazon wishlist with a very long description text",
-    "type": "ShoppingList",
-    "items": 10,
-    "icon": "cart"
 }]

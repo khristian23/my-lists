@@ -5,12 +5,15 @@ import ListManager from '@/views/ListManager.vue'
 
 Vue.use(Router)
 
+// Lazy loading sub pages
 export default new Router({
-    routes: [
-        {
-            path: '/',
-            name: 'list-manager',
-            component: ListManager
-        }
-    ]
+    routes: [{
+        path: '/',
+        name: 'list-manager',
+        component: ListManager
+    }, {
+        path: '/list/:id',
+        name: 'list',
+        component: () => import(/* webpackChunkName: "ListDetails" */ '@/views/ListDetails')
+    }]
 })
