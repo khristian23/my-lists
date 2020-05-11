@@ -53,4 +53,8 @@ export default {
         flex-grow: 1;
         overflow-y: auto;
     }
+
+    .page-footer {
+        flex-shrink: 0;
+    }
 </style>

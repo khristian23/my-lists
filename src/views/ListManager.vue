@@ -2,7 +2,8 @@
     <div class="page">
         <PageHeader :title="title" />
         <section class="page-content">
-            <MainList :lists="lists" @itemPress="onListPress" @itemEdit="onListEdit" @itemDelete="onListDelete" />
+            <TheList :items="lists" iconAction="edit"
+                @itemPress="onListPress" @itemAction="onListEdit" @itemDelete="onListDelete" />
             <Confirmation id="confirmationDialog" :message="message" @yes="onDeleteConfirm" @no="onDeleteCancel" />
         </section>
         <PageFooter>
@@ -17,8 +18,12 @@ import '@ui5/webcomponents/dist/Button'
 
 import '@ui5/webcomponents-icons/dist/icons/delete'
 import '@ui5/webcomponents-icons/dist/icons/add'
+import '@ui5/webcomponents-icons/dist/icons/edit'
+import '@ui5/webcomponents-icons/dist/icons/cart'
+import '@ui5/webcomponents-icons/dist/icons/favorite-list'
+import '@ui5/webcomponents-icons/dist/icons/task'
 
-import MainList from '@/components/MainList'
+import TheList from '@/components/TheList'
 import Confirmation from '@/components/TheConfirmation'
 import PageHeader from '@/components/TheHeader'
 import PageFooter from '@/components/TheFooter'
@@ -26,7 +31,7 @@ import PageFooter from '@/components/TheFooter'
 export default {
     name: 'ListManager',
     components: {
-        MainList,
+        TheList,
         Confirmation,
         PageHeader,
         PageFooter

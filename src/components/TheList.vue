@@ -1,42 +1,35 @@
 <template>
-    <div class="list-wrapper">
-        <ui5-list id="master-list" ref="master-list" @itemClick="onItemClick" @itemDelete="onItemDelete" mode="Delete">
-            <ui5-li-custom v-for="(list) in lists" :key="list.id" :datakey="list.id" class="li-custom">
-                <div class="li-content">
-                    <ui5-button icon="edit" design="Transparent" @click="$emit('itemEdit', list.id)"></ui5-button>
-                    <div class="li-title-wrapper">
-                        <div>
-                            <ui5-icon class="li-icon" :name="list.icon"></ui5-icon>
-                            <span class="li-title">{{list.name}}</span>
-                        </div>
-                        <span class="li-desc">{{list.description}}</span>
+    <ui5-list id="the-list" @itemClick="onItemClick" @itemDelete="onItemDelete" :header-text="header" mode="Delete">
+        <ui5-li-custom v-for="(item) in items" :key="item.id" :datakey="item.id" class="li-custom">
+            <div class="li-content">
+                <ui5-button :icon="iconAction" design="Transparent" @click="$emit('itemAction', item.id)" />
+                <div class="li-title-wrapper">
+                    <div>
+                        <ui5-icon class="li-icon" :name="item.icon" v-if="item.icon" />
+                        <span class="li-title">{{item.name}}</span>
                     </div>
-                    <span class="li-info">{{list.items}} items</span>
+                    <span class="li-desc" v-if="item.description">{{item.description}}</span>
                 </div>
-            </ui5-li-custom>
-        </ui5-list>
-    </div>
+                <span class="li-info" v-if="item.items">{{item.items}} items</span>
+            </div>
+        </ui5-li-custom>
+    </ui5-list>
 </template>
 
 <script>
 import '@ui5/webcomponents/dist/List'
 import '@ui5/webcomponents/dist/CustomListItem'
 
-import '@ui5/webcomponents-icons/dist/icons/edit'
-import '@ui5/webcomponents-icons/dist/icons/cart'
-import '@ui5/webcomponents-icons/dist/icons/favorite-list'
-import '@ui5/webcomponents-icons/dist/icons/task'
-
 export default {
-    name: 'main-list',
-    props: ['lists'],
+    name: 'the-list',
+    props: ['header', 'items', 'iconAction'],
     methods: {
         onItemClick (event) {
             this.$emit('itemPress', event.detail.item.getAttribute('datakey'))
         },
         onItemDelete (event) {
             let id = event.detail.item.getAttribute('datakey')
-            let item = this.lists.filter(item => item.id + '' === id)[0]
+            let item = this.items.filter(item => item.id + '' === id)[0]
             this.$emit('itemDelete', item)
         }
     }
