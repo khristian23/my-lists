@@ -15,5 +15,9 @@ export default new Router({
         path: '/list/:id',
         name: 'list',
         component: () => import(/* webpackChunkName: "ListDetails" */ '@/views/ListDetails')
+    }, {
+        path: '/list/:list/item/:id',
+        name: 'item',
+        component: () => import(/* webpackChunkName: "ListItem" */ '@/views/ListItem')
     }]
 })

@@ -13,7 +13,7 @@
             <template #spacer>
                 <ui5-input ref="quick" placeholder="Quick create"></ui5-input>
             </template>
-            <ui5-button design="Emphasized" :icon="btnIcon" @click="onCreate">{{btnText}}</ui5-button>
+            <ui5-button design="Emphasized" icon="add" @click="onCreate" v-if="showCreateButton">Create</ui5-button>
         </PageFooter>
     </div>
 </template>
@@ -24,14 +24,8 @@ import '@ui5/webcomponents/dist/Input'
 import TheList from '@/components/TheList'
 import PageHeader from '@/components/TheHeader'
 import PageFooter from '@/components/TheFooter'
-import '@ui5/webcomponents-icons/dist/icons/arrow-top'
 import '@ui5/webcomponents-icons/dist/icons/accept'
 import '@ui5/webcomponents-icons/dist/icons/repost'
-
-var ICON_ADD = 'add'
-var ICON_UP = 'arrow-top'
-var CREATE = 'Create'
-var ADD = 'Add'
 
 export default {
     name: 'list-details',
@@ -45,8 +39,7 @@ export default {
             listId: this.$route.params.id,
             list: {},
             items: [],
-            btnIcon: ICON_ADD,
-            btnText: CREATE
+            showCreateButton: true
         }
     },
     created () {
@@ -55,20 +48,7 @@ export default {
         })
     },
     mounted () {
-        this.$refs.quick.addEventListener('focus', () => {
-            this.btnIcon = ICON_UP
-            this.btnText = ADD
-        })
-        this.$refs.quick.addEventListener('blur', () => {
-            this.btnIcon = ICON_ADD
-            this.btnText = CREATE
-        })
-        this.$refs.quick.addEventListener('keyup', event => {
-            if (event.keyCode === 13) {
-                event.preventDefault()
-                this.onCreate()
-            }
-        })
+        this.hookListeners()
     },
     computed: {
         hasDoneItems () {
@@ -76,7 +56,22 @@ export default {
         }
     },
     methods: {
-        onCreate () {
+        hookListeners () {
+            this.$refs.quick.addEventListener('focus', () => {
+                this.showCreateButton = false
+            })
+            this.$refs.quick.addEventListener('blur', (event) => {
+                this.$refs.quick.value = ''
+                this.showCreateButton = true
+            })
+            this.$refs.quick.addEventListener('keyup', event => {
+                if (event.keyCode === 13) {
+                    event.preventDefault()
+                    this.onQuickCreate()
+                }
+            })
+        },
+        onQuickCreate () {
             this.items.push({
                 id: this.items.length,
                 name: this.$refs.quick.value,
@@ -85,7 +80,16 @@ export default {
             this.$refs.quick.value = ''
             this.$refs.quick.focus()
         },
+        onCreate () {
+            this.$router.push({ name: 'item', params: { list: this.listId, id: 'new' } })
+        },
+        onItemPress (itemId) {
+            this.$router.push({ name: 'item', params: { list: this.listId, id: itemId } })
+        },
         onItemDone () {
+
+        },
+        onItemDelete () {
 
         }
     }
