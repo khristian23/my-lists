@@ -15,8 +15,10 @@
     "@ui5/webcomponents-fiori": "^1.0.0-rc.6",
     "axios": "^0.19.2",
     "cordova-android": "8.1.0",
+    "firebase": "^7.14.4",
     "vue": "^2.5.2",
-    "vue-router": "^3.0.6"
+    "vue-router": "^3.0.6",
+    "vuefire": "^2.2.2"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.2",

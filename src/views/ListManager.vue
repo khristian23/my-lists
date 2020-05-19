@@ -1,19 +1,19 @@
 <template>
     <div class="page">
-        <PageHeader :title="title" />
+        <PageHeader :title="title" :user="user" />
         <section class="page-content">
             <TheList :items="lists" iconAction="edit"
                 @itemPress="onListPress" @itemAction="onListEdit" @itemDelete="onListDelete" />
             <Confirmation id="confirmationDialog" :message="message" @yes="onDeleteConfirm" @no="onDeleteCancel" />
         </section>
         <PageFooter>
-            <ui5-button design="Emphasized" icon="add">Create</ui5-button>
+            <ui5-button design="Emphasized" icon="add" @click="onCreate">Create</ui5-button>
         </PageFooter>
     </div>
 </template>
 
 <script>
-import axios from 'axios'
+import Storage from '@/storage/storage'
 import '@ui5/webcomponents/dist/Button'
 
 import '@ui5/webcomponents-icons/dist/icons/delete'
@@ -30,6 +30,7 @@ import PageFooter from '@/components/TheFooter'
 
 export default {
     name: 'ListManager',
+    props: ['user'],
     components: {
         TheList,
         Confirmation,
@@ -43,10 +44,8 @@ export default {
             message: ''
         }
     },
-    mounted () {
-        axios
-            .get('./static/data/mainlist.json')
-            .then(response => (this.lists = response.data))
+    async mounted () {
+        this.lists = await Storage.getLists()
     },
     methods: {
         onDeleteConfirm () {
@@ -91,6 +90,9 @@ export default {
         },
         onListEdit (listId) {
             alert('Edit List' + listId)
+        },
+        onCreate () {
+            this.$router.push({ name: 'editList', params: { id: 'new' } })
         }
     }
 }

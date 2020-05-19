@@ -7,19 +7,28 @@
             <div class="spacer" />
             <div :class="titleClasses">{{title}}</div>
             <div class="spacer" />
+            <router-link to="login" v-if="!user">
+                <ui5-avatar icon="employee" :initials="user.charAt(0).toUpperCase()" size="XS" v-if="user" />
+            </router-link>
+            <ui5-avatar :initials="user.charAt(0).toUpperCase()" size="XS" v-if="user" />
         </div>
     </header>
 </template>
 
 <script>
 import '@ui5/webcomponents-icons/dist/icons/nav-back'
+import '@ui5/webcomponents-icons/dist/icons/employee'
+import '@ui5/webcomponents/dist/Avatar'
 
 export default {
     name: 'the-header',
-    props: ['title', 'backButton'],
+    props: ['title', 'backButton', 'user'],
     methods: {
         onNavBack () {
             this.$router.go(-1)
+        },
+        onLogin () {
+            this.$router.push({ name: 'login' })
         }
     },
     computed: {
@@ -42,6 +51,7 @@ export default {
         height: 3rem;
         font-weight: bold;
         padding-left: 6px;
+        padding-right: 12px;
         display: flex;
         align-items: center;
     }
@@ -75,4 +85,14 @@ export default {
         border-bottom: 1px solid #b3b3b3;
         background: white;
     } */
+
+    .user {
+        background-color: #286eb4;
+        height: 2rem;
+        width: 2rem;
+        font-size: 0.75rem;
+        color: #fff;
+        border-radius: 50%;
+        outline: none;
+    }
 </style>

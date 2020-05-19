@@ -1,12 +1,12 @@
 <template>
     <div class="page">
-        <PageHeader :title="title" backButton="true" />
+        <PageHeader :title="title" backButton="true" :user="user" />
         <section class="page-content">
-            <div class="form">
+            <SimpleForm>
                 <ui5-label id="nameLabel" for="nameInput" required show-colon>Name</ui5-label>
                 <ui5-input id="nameInput" aria-required="true" aria-labelledby="nameLabel" placeholder="Enter item name"
                     :value="name" @input="name = $event.target.value" required />
-            </div>
+            </SimpleForm>
         </section>
         <PageFooter>
             <ui5-button design="Emphasized" icon="save" @click="onSave">Save</ui5-button>
@@ -16,6 +16,7 @@
 
 <script>
 import PageHeader from '@/components/TheHeader'
+import SimpleForm from '@/components/TheForm'
 import PageFooter from '@/components/TheFooter'
 
 import '@ui5/webcomponents-icons/dist/icons/save'
@@ -24,6 +25,7 @@ import '@ui5/webcomponents/dist/Label'
 
 export default {
     name: 'list-item',
+    props: ['user'],
     data () {
         return {
             name: '',
@@ -33,7 +35,8 @@ export default {
     },
     components: {
         PageHeader,
-        PageFooter
+        PageFooter,
+        SimpleForm
     },
     computed: {
         title () {
@@ -49,17 +52,4 @@ export default {
 </script>
 
 <style>
-    .form {
-        display: flex;
-        flex-direction: column;
-        padding-bottom: 1rem;
-    }
-
-    .form > * {
-        width: 100%;
-    }
-
-    .form > ui5-label {
-        margin-top: 1rem;
-    }
 </style>

@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 /www/
 /platforms/
+/src/firebase-init.js
 
 # Editor directories and files
 .idea

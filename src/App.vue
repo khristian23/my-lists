@@ -1,14 +1,27 @@
 <template>
     <div class="app">
-        <router-view />
+        <router-view :user="user" />
     </div>
 </template>
 
 <script>
 import '@ui5/webcomponents-base/dist/features/browsersupport/IE11'
+import Firebase from 'firebase'
 
 export default {
-    name: 'main-app'
+    name: 'main-app',
+    data () {
+        return {
+            user: null
+        }
+    },
+    mounted () {
+        Firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                this.user = user.email
+            }
+        })
+    }
 }
 </script>
 
@@ -23,6 +36,8 @@ export default {
         position: absolute;
         top: 0;
         left: 0;
+        font-size: 1rem;
+        font-family: var(--sapFontFamily);
     }
 
     .page {

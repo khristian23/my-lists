@@ -19,5 +19,17 @@ export default new Router({
         path: '/list/:list/item/:id',
         name: 'item',
         component: () => import(/* webpackChunkName: "ListItem" */ '@/views/ListItem')
+    }, {
+        path: '/edit/:id',
+        name: 'editList',
+        component: () => import(/* webpackChunkName: "EditList" */ '@/views/EditList')
+    }, {
+        path: '/login',
+        name: 'login',
+        component: () => import(/* webpackChunkName: "Login" */ '@/views/Login')
+    }, {
+        path: '/register',
+        name: 'register',
+        component: () => import(/* webpackChunkName: "Register" */ '@/views/Register')
     }]
 })

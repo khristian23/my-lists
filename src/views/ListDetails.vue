@@ -1,6 +1,6 @@
 <template>
     <div class="page">
-        <PageHeader :title="list.name" backButton="true" />
+        <PageHeader :title="list.name" backButton="true" :user="user" />
         <section class="page-content">
             <p>The clicked link id: {{this.$route.params.id}}</p>
             <p>The list name is: {{list.name}}</p>
@@ -29,6 +29,7 @@ import '@ui5/webcomponents-icons/dist/icons/repost'
 
 export default {
     name: 'list-details',
+    props: ['user'],
     components: {
         PageHeader,
         PageFooter,
