@@ -5,18 +5,17 @@
             <SimpleForm :error="error" ref="form">
                 <FormInput name="email" v-model="email" placeholder="Enter an e-mail" />
                 <FormInput name="password" v-model="password" placeholder="Enter a password" />
-                <hr />
+                <hr>
                 <p>Or login with:</p>
                 <div class="providers">
                     <a @click="onGoogle">
                         <img alt="Google" src="@/assets/google.png" />
                     </a>
                 </div>
-                <hr />
-                <p>No account, then <router-link to="/register">Register</router-link></p>
             </SimpleForm>
         </section>
         <PageFooter>
+            <ui5-button design="Transparent" @click="onRegister">Register</ui5-button>
             <ui5-button design="Emphasized" @click="onLogin">Log in</ui5-button>
         </PageFooter>
     </div>
@@ -48,14 +47,14 @@ export default {
     },
     methods: {
         onRegister () {
-            this.$router.push({ name: 'register' })
+            this.$router.replace({ name: 'register' })
         },
         onLogin () {
             Firebase.auth()
                 .signInWithEmailAndPassword(this.email, this.password)
                 .then(user => {
                     this.$refs.form.showToast(LOGON_MESSAGE)
-                    this.$router.go(-1)
+                    this.$router.replace({ name: 'list-manager' })
                 }).catch(err => {
                     this.error = err.message
                 })
@@ -65,7 +64,7 @@ export default {
 
             Firebase.auth().signInWithPopup(provider).then(result => {
                 this.$refs.form.showToast(LOGON_MESSAGE)
-                this.$router.go(-1)
+                this.$router.replace({ name: 'list-manager' })
             }).catch(err => {
                 this.error = err.message
             })

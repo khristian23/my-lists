@@ -22,6 +22,11 @@ export default {
         showToast (message) {
             this.toast = message
             this.$refs.toast.show()
+        },
+        validate () {
+            return this.$children.reduce((r, c) => {
+                return c.validate() && r
+            }, true)
         }
     }
 }
