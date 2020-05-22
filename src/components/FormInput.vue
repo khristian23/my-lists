@@ -11,28 +11,17 @@
 <script>
 import '@ui5/webcomponents/dist/Input'
 import '@ui5/webcomponents/dist/Label'
+import {formItem} from '@/mixins/formItem'
 
 export default {
     name: 'form-input',
-    props: ['name', 'value', 'placeholder', 'required'],
+    mixins: [formItem],
     data () {
         return {
             stateMessage: ''
         }
     },
-    computed: {
-        isRequired () {
-            return this.required || false
-        },
-        label () {
-            return this.capitalized(this.name)
-        }
-    },
     methods: {
-        capitalized (value) {
-            if (typeof value !== 'string') return ''
-            return value.charAt(0).toUpperCase() + value.slice(1)
-        },
         validate () {
             let input = this.$refs.input
             if (input.required && input.value === '') {

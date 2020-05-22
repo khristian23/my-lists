@@ -5,9 +5,11 @@ import App from './App'
 import router from './router'
 import '@ui5/webcomponents-fiori/dist/Assets'
 import '@/firebase-init'
+import {strings} from './mixins/strings'
 
 Vue.config.productionTip = false
 Vue.config.ignoredElements = [/^ui5-/]
+Vue.mixin(strings)
 
 /* eslint-disable no-new */
 new Vue({

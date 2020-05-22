@@ -25,7 +25,7 @@ export default {
         },
         validate () {
             return this.$children.reduce((r, c) => {
-                return c.validate() && r
+                return c.validate ? c.validate() && r : true
             }, true)
         }
     }

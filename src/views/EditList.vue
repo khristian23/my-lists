@@ -5,6 +5,11 @@
             <SimpleForm ref="form" :error="error">
                 <FormInput name="name" v-model="name" placeholder="Enter a name" required="true" />
                 <FormInput name="description" v-model="description" placeholder="Enter a description" />
+                <FormSelect name="type" v-model="type">
+                    <ui5-option icon="task" value="todo">To Do List</ui5-option>
+                    <ui5-option icon="favorite-list" value="wish">Wish List</ui5-option>
+                    <ui5-option icon="cart" value="shop">Shopping List</ui5-option>
+                </FormSelect>
             </SimpleForm>
         </section>
         <PageFooter>
@@ -19,6 +24,8 @@ import PageHeader from '@/components/TheHeader'
 import SimpleForm from '@/components/TheForm'
 import PageFooter from '@/components/TheFooter'
 import FormInput from '@/components/FormInput'
+import FormSelect from '@/components/FormSelect'
+import '@ui5/webcomponents/dist/Option'
 import '@ui5/webcomponents-icons/dist/icons/save'
 
 export default {
@@ -28,6 +35,7 @@ export default {
         return {
             name: '',
             description: '',
+            type: '',
             error: null
         }
     },
@@ -35,7 +43,8 @@ export default {
         PageHeader,
         SimpleForm,
         PageFooter,
-        FormInput
+        FormInput,
+        FormSelect
     },
     computed: {
         title () {
