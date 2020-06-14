@@ -61,34 +61,38 @@ export default {
 
     async getObjectsBy (table, options) {
         let db = await this.getDb()
-        let field = 'id'
-        let value = ''
-        let range
 
         if (!options) {
             return this.getObjects()
-        } else {
-            field = Object.keys(options)[0]
-            value = options[field]
-            range = IDBKeyRange.lowerBound(value)
         }
 
         return new Promise(resolve => {
             let trans = db.transaction([table], 'readonly')
-
-            trans.oncomplete = () => {
-                resolve(objects)
-            }
-
             let store = trans.objectStore(table)
-            let objects = []
-            let index = store.index(field)
 
-            index.openCursor(range).onsuccess = e => {
-                let cursor = e.target.result
-                if (cursor) {
-                    objects.push(cursor.value)
-                    cursor.continue()
+            let field = Object.keys(options)[0]
+            let value = options[field]
+
+            if (field === store.keyPath) {
+                let request = store.get(parseInt(value, 10))
+                request.onsuccess = () => {
+                    resolve(request.result)
+                }
+            } else {
+                let range = IDBKeyRange.lowerBound(value)
+                let objects = []
+                let index = store.index(field)
+
+                trans.oncomplete = () => {
+                    resolve(objects)
+                }
+
+                index.openCursor(range).onsuccess = e => {
+                    let cursor = e.target.result
+                    if (cursor) {
+                        objects.push(cursor.value)
+                        cursor.continue()
+                    }
                 }
             }
         })

@@ -6,9 +6,10 @@
                 <FormInput name="name" v-model="name" placeholder="Enter a name" required="true" />
                 <FormInput name="description" v-model="description" placeholder="Enter a description" />
                 <FormSelect name="type" v-model="type">
-                    <ui5-option icon="task" value="todo">To Do List</ui5-option>
-                    <ui5-option icon="favorite-list" value="wish">Wish List</ui5-option>
-                    <ui5-option icon="cart" value="shop">Shopping List</ui5-option>
+                    <ui5-option v-for="(type) in $Const.lists.types" :key="type.id" :icon="type.icon" :value="type.id">{{type.name}}</ui5-option>
+                </FormSelect>
+                <FormSelect name="subtype" v-model="subtype" :disabled="subTypesDisabled">
+                    <ui5-option v-for="(subType) in subTypes" :key="subType.id" :icon="subType.icon" :value="subType.id">{{subType.name}}</ui5-option>
                 </FormSelect>
             </SimpleForm>
         </section>
@@ -19,7 +20,6 @@
 </template>
 
 <script>
-import Storage from '@/storage/storage'
 import PageHeader from '@/components/TheHeader'
 import SimpleForm from '@/components/TheForm'
 import PageFooter from '@/components/TheFooter'
@@ -35,7 +35,8 @@ export default {
         return {
             name: '',
             description: '',
-            type: '',
+            type: this.$Const.lists.types[0].id,
+            subtype: '',
             error: null
         }
     },
@@ -55,19 +56,30 @@ export default {
             } else {
                 return 'Edit List'
             }
+        },
+        subTypes () {
+            return this.$Const.lists.types.filter(t => t.id === this.type)[0].subTypes
+        },
+        subTypesDisabled () {
+            return !this.subTypes.length
+        }
+    },
+    watch: {
+        type (selection) {
+            this.subtype = this.$Const.lists.types
+                .filter(t => t.id === selection)[0]
+                .subTypes[0].id
         }
     },
     methods: {
         async onSave () {
             let list = {
                 name: this.name,
-                description: this.description
+                description: this.description,
+                type: this.type,
+                subType: this.subtype
             }
-
-            await Storage.saveList(list)
-            this.$refs.form.showToast('List created')
-            this.$router.go(-1)
-            this.$refs.form.showToast('List created2')
+            this.$emit('saveList', list)
         }
     }
 }

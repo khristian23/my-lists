@@ -40,14 +40,24 @@ export default {
     data () {
         return {
             title: 'My Lists',
-            lists: [],
-            message: ''
+            message: '',
+            lists: []
         }
     },
-    async mounted () {
-        this.lists = await Storage.getLists()
+    watch: {
+        user: {
+            handler () {
+                this.getCurrentUserLists()
+            },
+            deep: true,
+            immediate: true
+        }
     },
     methods: {
+        async getCurrentUserLists () {
+            let unsortedlists = await Storage.getLists(this.user.uid)
+            this.lists = unsortedlists.sort((a, b) => a.name.localeCompare(b.name))
+        },
         onDeleteConfirm () {
             this.resolveConfirm()
         },
@@ -66,15 +76,6 @@ export default {
             this.$router.push({ name: 'list', params: { id: listId } })
         },
         onListDelete (list) {
-            // var itemToDelete = this.lists.reduce((result, item, index) => {
-            //     if (item.id + '' === listId) {
-            //         result = {
-            //             index: index,
-            //             item: item
-            //         }
-            //     }
-            //     return result
-            // }, {})
             var index = this.lists.indexOf(list)
 
             this.message = 'Are you sure to delete list ' + list.name + '?'

@@ -31,5 +31,9 @@ export default new Router({
         path: '/register',
         name: 'register',
         component: () => import(/* webpackChunkName: "Register" */ '@/views/Register')
+    }, {
+        path: '/profile',
+        name: 'profile',
+        component: () => import(/* webpackChunkName: "Profile" */ '@/views/Profile')
     }]
 })

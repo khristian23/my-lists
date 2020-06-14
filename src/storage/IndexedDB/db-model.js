@@ -11,7 +11,9 @@ export const model = {
                 'description',
                 'type',
                 'subtype',
-                'status'
+                'status',
+                'modifiedAt',
+                'userId'
             ]
         },
         'item': {
@@ -20,10 +22,12 @@ export const model = {
                 keyPath: 'id'
             },
             indexes: [
-                'listid',
+                'listId',
                 'name',
                 'priority',
-                'status'
+                'status',
+                'modifiedAt',
+                'userId'
             ]
         }
     }

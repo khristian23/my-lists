@@ -1,5 +1,5 @@
 export const formItem = {
-    props: ['name', 'value', 'placeholder', 'required'],
+    props: ['name', 'value', 'placeholder', 'required', 'disabled'],
     computed: {
         isRequired () {
             return this.required || false

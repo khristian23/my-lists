@@ -7,10 +7,12 @@
             <div class="spacer" />
             <div :class="titleClasses">{{title}}</div>
             <div class="spacer" />
-            <router-link to="login" v-if="!user">
-                <ui5-avatar icon="employee" :initials="user.charAt(0).toUpperCase()" size="XS" v-if="user" />
+            <router-link to="/login" v-if="!isLoggedIn">
+                <ui5-avatar icon="employee" size="XS" />
             </router-link>
-            <ui5-avatar :initials="user.charAt(0).toUpperCase()" size="XS" v-if="user" />
+            <router-link to="/profile" v-if="isLoggedIn">
+                <ui5-avatar :initials="initials" size="XS" />
+            </router-link>
         </div>
     </header>
 </template>
@@ -38,6 +40,19 @@ export default {
                 classes += ' right-spacer'
             }
             return classes
+        },
+        isLoggedIn () {
+            return this.user && !this.user.isAnonymous
+        },
+        initials () {
+            if (this.isLoggedIn) {
+                let name = this.user.displayName
+                if (!name) {
+                    name = this.user.email
+                }
+                return name.charAt(0).toUpperCase()
+            }
+            return ''
         }
     }
 }

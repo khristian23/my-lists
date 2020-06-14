@@ -1,17 +1,32 @@
-import idb from './indexed-db'
+import storage from './IndexedDB/storage-idb'
 
 export default {
 
-    async getLists () {
-        return idb.getObjects('list')
+    createLocalAnonymousUser () {
+        return {
+            uid: 'Anonymous',
+            isAnonymous: true
+        }
     },
 
-    async saveList (list) {
-        return idb.saveObject('list', list)
+    async getLists (userId) {
+        return storage.getLists(userId)
     },
 
-    async getItems (listId) {
-        return idb.getObjectsBy('item', { listid: listId })
+    async getList (userId, listId) {
+        return storage.getList(userId, listId)
+    },
+
+    async saveList (userId, list) {
+        return storage.saveList(userId, list)
+    },
+
+    async getItems (userId, listId) {
+        return storage.getItems(userId, listId)
+    },
+
+    async saveListItem (userId, listId, listItem) {
+        return storage.saveListItem(userId, listId, listItem)
     }
 
 }

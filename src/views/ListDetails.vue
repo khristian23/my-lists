@@ -2,9 +2,8 @@
     <div class="page">
         <PageHeader :title="list.name" backButton="true" :user="user" />
         <section class="page-content">
-            <p>The clicked link id: {{this.$route.params.id}}</p>
-            <p>The list name is: {{list.name}}</p>
-            <TheList header="Pending" :items="items" iconAction="accept"
+            <h4 v-if="noItems">No data found</h4>
+            <TheList header="Pending" :items="items" iconAction="accept" v-if="hasPendingItems"
                 @itemPress="onItemPress" @itemAction="onItemDone" @itemDelete="onItemDelete" />
             <TheList header="Done" :items="items" iconAction="repost" v-if="hasDoneItems"
                 @itemPress="onItemPress" @itemAction="onItemUndone" @itemDelete="onItemDelete" />
@@ -19,11 +18,13 @@
 </template>
 
 <script>
-import axios from 'axios'
+import Storage from '@/storage/storage'
 import '@ui5/webcomponents/dist/Input'
+
 import TheList from '@/components/TheList'
 import PageHeader from '@/components/TheHeader'
 import PageFooter from '@/components/TheFooter'
+
 import '@ui5/webcomponents-icons/dist/icons/accept'
 import '@ui5/webcomponents-icons/dist/icons/repost'
 
@@ -43,15 +44,29 @@ export default {
             showCreateButton: true
         }
     },
-    created () {
-        axios.get('./static/data/mainlist.json').then(response => {
-            this.list = response.data.filter(data => data.id == this.listId)[0] // eslint-disable-line eqeqeq
-        })
+    watch: {
+        listId: {
+            immediate: true,
+            async handler () {
+                this.list = await Storage.getList(this.user.uid, this.listId)
+                if (this.list) {
+                    this.loadListItems()
+                } else {
+                    this.$router.replace({ name: 'list-manager' })
+                }
+            }
+        }
     },
     mounted () {
         this.hookListeners()
     },
     computed: {
+        noItems () {
+            return !(this.hasPendingItems || this.hasDoneItems)
+        },
+        hasPendingItems () {
+            return !!this.items.filter(item => item.status === 'Pending').length
+        },
         hasDoneItems () {
             return !!this.items.filter(item => item.status === 'Done').length
         }
@@ -72,12 +87,16 @@ export default {
                 }
             })
         },
-        onQuickCreate () {
-            this.items.push({
-                id: this.items.length,
+        async loadListItems () {
+            this.items = await Storage.getItems(this.user.uid, this.listId)
+        },
+        async onQuickCreate () {
+            let listItem = {
                 name: this.$refs.quick.value,
                 status: 'Pending'
-            })
+            }
+            await Storage.saveListItem(this.user.uid, this.listId, listItem)
+            this.loadListItems()
             this.$refs.quick.value = ''
             this.$refs.quick.focus()
         },
