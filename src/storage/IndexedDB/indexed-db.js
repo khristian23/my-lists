@@ -98,7 +98,7 @@ export default {
         })
     },
 
-    async saveObject (table, object) {
+    async addObject (table, object) {
         let db = await this.getDb()
 
         return new Promise(resolve => {
@@ -109,6 +109,24 @@ export default {
 
             let store = trans.objectStore(table)
             store.add(object)
+        })
+    },
+
+    async updateObject (table, object) {
+        let db = await this.getDb()
+
+        return new Promise(resolve => {
+            let trans = db.transaction([table], 'readwrite')
+            let store = trans.objectStore(table)
+            let request = store.get(object[store.keyPath])
+
+            request.onsuccess = () => {
+                let data = Object.assign({}, request.result, object)
+
+                store.put(data).onsuccess = () => {
+                    resolve()
+                }
+            }
         })
     },
 

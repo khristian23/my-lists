@@ -6,10 +6,22 @@
                 <FormInput name="name" v-model="name" placeholder="Enter a name" required="true" />
                 <FormInput name="description" v-model="description" placeholder="Enter a description" />
                 <FormSelect name="type" v-model="type">
-                    <ui5-option v-for="(type) in $Const.lists.types" :key="type.id" :icon="type.icon" :value="type.id">{{type.name}}</ui5-option>
+                    <ui5-option v-for="theType in $Const.lists.types"
+                        :key="theType.id"
+                        :icon="theType.icon"
+                        :value="theType.id"
+                        :selected="theType.id === type">
+                        {{theType.name}}
+                    </ui5-option>
                 </FormSelect>
-                <FormSelect name="subtype" v-model="subtype" :disabled="subTypesDisabled">
-                    <ui5-option v-for="(subType) in subTypes" :key="subType.id" :icon="subType.icon" :value="subType.id">{{subType.name}}</ui5-option>
+                <FormSelect name="subtype" v-model="subtype" :disabled="subTypesDisabled" ref="subType">
+                    <ui5-option v-for="theSubType in subTypes"
+                        :key="theSubType.id"
+                        :icon="theSubType.icon"
+                        :value="theSubType.id"
+                        :selected="theSubType.id === subtype">
+                        {{theSubType.name}}
+                    </ui5-option>
                 </FormSelect>
             </SimpleForm>
         </section>
@@ -20,6 +32,7 @@
 </template>
 
 <script>
+import Storage from '@/storage/storage'
 import PageHeader from '@/components/TheHeader'
 import SimpleForm from '@/components/TheForm'
 import PageFooter from '@/components/TheFooter'
@@ -33,11 +46,14 @@ export default {
     props: ['user'],
     data () {
         return {
+            listId: null,
             name: '',
             description: '',
             type: this.$Const.lists.types[0].id,
-            subtype: '',
-            error: null
+            subtype: null,
+            subTypes: [],
+            error: null,
+            fields: ['name', 'description', 'type', 'subtype']
         }
     },
     components: {
@@ -46,6 +62,27 @@ export default {
         PageFooter,
         FormInput,
         FormSelect
+    },
+    watch: {
+        '$route.params.id': {
+            immediate: true,
+            async handler () {
+                if (this.$route.params.id !== 'new') {
+                    this.listId = this.$route.params.id
+                    let data = await Storage.getList(this.user.uid, this.listId)
+
+                    this.fields.forEach(d => {
+                        this[d] = data[d]
+                    })
+                } else {
+                    this.type = this.$Const.lists.types[0].id
+                    this.onTypeChanged()
+                }
+            }
+        },
+        type () {
+            this.onTypeChanged()
+        }
     },
     computed: {
         title () {
@@ -57,27 +94,28 @@ export default {
                 return 'Edit List'
             }
         },
-        subTypes () {
-            return this.$Const.lists.types.filter(t => t.id === this.type)[0].subTypes
-        },
         subTypesDisabled () {
             return !this.subTypes.length
         }
     },
-    watch: {
-        type (selection) {
-            this.subtype = this.$Const.lists.types
-                .filter(t => t.id === selection)[0]
-                .subTypes[0].id
-        }
-    },
     methods: {
+        onTypeChanged () {
+            this.subTypes = this.$Const.lists.types.filter(t => t.id === this.type)[0].subTypes
+
+            let type = this.$Const.lists.types.filter(t => t.id === this.type)[0]
+            if (type.subTypes.length) {
+                this.subtype = this.subtype || type.subTypes[0].id
+            } else {
+                this.subtype = null
+            }
+        },
         async onSave () {
             let list = {
+                id: this.listId,
                 name: this.name,
                 description: this.description,
                 type: this.type,
-                subType: this.subtype
+                subtype: this.subtype
             }
             this.$emit('saveList', list)
         }

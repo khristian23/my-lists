@@ -3,9 +3,9 @@
         <PageHeader :title="list.name" backButton="true" :user="user" />
         <section class="page-content">
             <h4 v-if="noItems">No data found</h4>
-            <TheList header="Pending" :items="items" iconAction="accept" v-if="hasPendingItems"
+            <TheList header="Pending" :items="pendingItems" iconAction="accept" v-if="hasPendingItems"
                 @itemPress="onItemPress" @itemAction="onItemDone" @itemDelete="onItemDelete" />
-            <TheList header="Done" :items="items" iconAction="repost" v-if="hasDoneItems"
+            <TheList header="Done" :items="doneItems" iconAction="repost" v-if="hasDoneItems"
                 @itemPress="onItemPress" @itemAction="onItemUndone" @itemDelete="onItemDelete" />
         </section>
         <PageFooter>
@@ -65,10 +65,16 @@ export default {
             return !(this.hasPendingItems || this.hasDoneItems)
         },
         hasPendingItems () {
-            return !!this.items.filter(item => item.status === 'Pending').length
+            return !!this.pendingItems.length
         },
         hasDoneItems () {
-            return !!this.items.filter(item => item.status === 'Done').length
+            return !!this.doneItems.length
+        },
+        pendingItems () {
+            return this.items.filter(item => item.status === 'Pending')
+        },
+        doneItems () {
+            return this.items.filter(item => item.status === 'Done')
         }
     },
     methods: {
@@ -93,9 +99,10 @@ export default {
         async onQuickCreate () {
             let listItem = {
                 name: this.$refs.quick.value,
-                status: 'Pending'
+                status: 'Pending',
+                listId: this.listId
             }
-            await Storage.saveListItem(this.user.uid, this.listId, listItem)
+            await Storage.saveListItem(this.user.uid, listItem)
             this.loadListItems()
             this.$refs.quick.value = ''
             this.$refs.quick.focus()
@@ -106,8 +113,21 @@ export default {
         onItemPress (itemId) {
             this.$router.push({ name: 'item', params: { list: this.listId, id: itemId } })
         },
-        onItemDone () {
-
+        async onItemDone (itemId) {
+            let listItem = {
+                id: itemId,
+                status: 'Done'
+            }
+            await Storage.saveListItem(this.user.uid, listItem)
+            this.loadListItems()
+        },
+        async onItemUndone (itemId) {
+            let listItem = {
+                id: itemId,
+                status: 'Pending'
+            }
+            await Storage.saveListItem(this.user.uid, listItem)
+            this.loadListItems()
         },
         onItemDelete () {
 

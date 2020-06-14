@@ -14,24 +14,29 @@ export default {
         return list
     },
 
+    async saveObject (table, userId, object) {
+        let objectToSave = Object.assign({}, object, {
+            userId: userId,
+            modifiedAt: new Date().getTime()
+        })
+
+        if (object.id) {
+            return idb.updateObject(table, objectToSave)
+        }
+        delete objectToSave.id
+        return idb.addObject(table, objectToSave)
+    },
+
     async saveList (userId, list) {
-        let listToSave = list
-        listToSave.userId = userId
-        listToSave.modifiedAt = new Date().getTime()
-        return idb.saveObject('list', listToSave)
+        this.saveObject('list', userId, list)
     },
 
     async getItems (userId, listId) {
         return idb.getObjectsBy('item', { listId: listId })
     },
 
-    async saveListItem (userId, listId, listItem) {
-        let listItemToSave = Object.assign({}, listItem, {
-            userId: userId,
-            listId: listId,
-            modifiedAt: new Date().getTime()
-        })
-        return idb.saveObject('item', listItemToSave)
+    async saveListItem (userId, listItem) {
+        return this.saveObject('item', userId, listItem)
     }
 
 }

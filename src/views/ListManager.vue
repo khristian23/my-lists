@@ -90,7 +90,7 @@ export default {
             })
         },
         onListEdit (listId) {
-            alert('Edit List' + listId)
+            this.$router.push({ name: 'editList', params: { id: listId } })
         },
         onCreate () {
             this.$router.push({ name: 'editList', params: { id: 'new' } })
