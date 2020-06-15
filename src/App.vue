@@ -54,13 +54,21 @@ export default {
                 })
         },
         async onSaveList (list) {
-            await Storage.saveList(this.user.uid, list)
-            this.showToast('List saved')
-            this.$router.replace({ name: 'list-manager' })
+            try {
+                await Storage.saveList(this.user.uid, list)
+                this.showToast('List saved')
+                this.$router.replace({ name: 'list-manager' })
+            } catch (e) {
+                alert(e)
+            }
         },
         async onAddListItem (listItem) {
-            await Storage.addListItem(this.user.uid, listItem)
-            this.showToast('List item saved')
+            try {
+                await Storage.addListItem(this.user.uid, listItem)
+                this.showToast('List item saved')
+            } catch (e) {
+                alert(e)
+            }
         }
     }
 }

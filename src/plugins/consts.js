@@ -7,8 +7,8 @@ let Constants = {
                     name: 'To Do List',
                     icon: 'task',
                     subTypes: [{
-                        id: 'house',
-                        name: 'House'
+                        id: 'personal',
+                        name: 'Personal'
                     }, {
                         id: 'work',
                         name: 'Work'

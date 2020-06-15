@@ -21,6 +21,9 @@ export default {
         })
 
         if (object.id) {
+            if (typeof object.id === 'string') {
+                debugger
+            }
             return idb.updateObject(table, objectToSave)
         }
         delete objectToSave.id

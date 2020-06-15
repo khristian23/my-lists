@@ -115,17 +115,23 @@ export default {
     async updateObject (table, object) {
         let db = await this.getDb()
 
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             let trans = db.transaction([table], 'readwrite')
             let store = trans.objectStore(table)
             let request = store.get(object[store.keyPath])
 
             request.onsuccess = () => {
                 let data = Object.assign({}, request.result, object)
-
-                store.put(data).onsuccess = () => {
+                let updateRequest = store.put(data)
+                updateRequest.onsuccess = () => {
                     resolve()
                 }
+                updateRequest.onerror = (e) => {
+                    reject(e)
+                }
+            }
+            request.onerror = (e) => {
+                reject(e)
             }
         })
     },
@@ -133,10 +139,13 @@ export default {
     async deleteObject (table, object) {
         let db = await this.getDb()
 
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             let trans = db.transaction([table], 'readwrite')
             trans.oncomplete = () => {
                 resolve()
+            }
+            trans.onerror = (e) => {
+                reject(e)
             }
 
             let store = trans.objectStore(table)

@@ -5,7 +5,7 @@
             <SimpleForm ref="form" :error="error">
                 <FormInput name="name" v-model="name" placeholder="Enter a name" required="true" />
                 <FormInput name="description" v-model="description" placeholder="Enter a description" />
-                <FormSelect name="type" v-model="type">
+                <FormSelect name="type" v-model="type" @change="onTypeSelection">
                     <ui5-option v-for="theType in $Const.lists.types"
                         :key="theType.id"
                         :icon="theType.icon"
@@ -14,7 +14,7 @@
                         {{theType.name}}
                     </ui5-option>
                 </FormSelect>
-                <FormSelect name="subtype" v-model="subtype" :disabled="subTypesDisabled" ref="subType">
+                <FormSelect name="subtype" v-model="subtype" :disabled="subTypesDisabled">
                     <ui5-option v-for="theSubType in subTypes"
                         :key="theSubType.id"
                         :icon="theSubType.icon"
@@ -68,7 +68,7 @@ export default {
             immediate: true,
             async handler () {
                 if (this.$route.params.id !== 'new') {
-                    this.listId = this.$route.params.id
+                    this.listId = parseInt(this.$route.params.id, 10)
                     let data = await Storage.getList(this.user.uid, this.listId)
 
                     this.fields.forEach(d => {
@@ -76,12 +76,9 @@ export default {
                     })
                 } else {
                     this.type = this.$Const.lists.types[0].id
-                    this.onTypeChanged()
                 }
+                this.onTypeChanged()
             }
-        },
-        type () {
-            this.onTypeChanged()
         }
     },
     computed: {
@@ -99,6 +96,10 @@ export default {
         }
     },
     methods: {
+        onTypeSelection () {
+            this.subtype = null
+            this.onTypeChanged()
+        },
         onTypeChanged () {
             this.subTypes = this.$Const.lists.types.filter(t => t.id === this.type)[0].subTypes
 
@@ -117,6 +118,7 @@ export default {
                 type: this.type,
                 subtype: this.subtype
             }
+
             this.$emit('saveList', list)
         }
     }
