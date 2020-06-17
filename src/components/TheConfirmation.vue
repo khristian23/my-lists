@@ -4,8 +4,8 @@
 
         <div slot="footer" class="dialog-footer">
             <div class="spacer" />
-            <ui5-button design="Emphasized" @click="$emit('yes')">Yes</ui5-button>
-            <ui5-button design="Transparent" @click="$emit('no')">No</ui5-button>
+            <ui5-button design="Emphasized" @click="onYes">Yes</ui5-button>
+            <ui5-button design="Transparent" @click="onNo">No</ui5-button>
         </div>
     </ui5-dialog>
 </template>
@@ -15,7 +15,33 @@ import '@ui5/webcomponents/dist/Dialog'
 
 export default {
     name: 'the-confirmation',
-    props: ['message']
+    data () {
+        return {
+            message: ''
+        }
+    },
+    computed: {
+        dialog () {
+            return document.getElementById('confirmation-dialog')
+        }
+    },
+    methods: {
+        onYes () {
+            this.dialog.close()
+            this.resolveConfirm(true)
+        },
+        onNo () {
+            this.dialog.close()
+            this.resolveConfirm(false)
+        },
+        showDialog (message) {
+            this.message = message
+            return new Promise((resolve) => {
+                this.resolveConfirm = resolve
+                this.dialog.open()
+            })
+        }
+    }
 }
 </script>
 

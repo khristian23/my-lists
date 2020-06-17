@@ -4,6 +4,7 @@
             :user="user"
             @logout="onLogout"
             @saveList="onSaveList"
+            @deleteList="onDeleteList"
             @addListItem="onAddListItem" />
         <ui5-toast ref="toast">{{toast}}</ui5-toast>
     </div>
@@ -58,6 +59,14 @@ export default {
                 await Storage.saveList(this.user.uid, list)
                 this.showToast('List saved')
                 this.$router.replace({ name: 'list-manager' })
+            } catch (e) {
+                alert(e)
+            }
+        },
+        async onDeleteList (listId) {
+            try {
+                await Storage.deleteList(this.user.uid, listId)
+                this.showToast('List deleted')
             } catch (e) {
                 alert(e)
             }

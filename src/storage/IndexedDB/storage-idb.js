@@ -21,9 +21,6 @@ export default {
         })
 
         if (object.id) {
-            if (typeof object.id === 'string') {
-                debugger
-            }
             return idb.updateObject(table, objectToSave)
         }
         delete objectToSave.id
@@ -31,7 +28,16 @@ export default {
     },
 
     async saveList (userId, list) {
-        this.saveObject('list', userId, list)
+        return this.saveObject('list', userId, list)
+    },
+
+    async deleteList (userId, listId) {
+        let list = await this.getList(userId, listId)
+        if (!list) {
+            let error = 'List not found'
+            throw error
+        }
+        return idb.deleteObject('list', list)
     },
 
     async getItems (userId, listId) {

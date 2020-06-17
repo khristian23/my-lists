@@ -4,8 +4,8 @@
         <section class="page-content">
             <TheList :items="lists" iconAction="edit"
                 @itemPress="onListPress" @itemAction="onListEdit" @itemDelete="onListDelete" />
-            <Confirmation id="confirmationDialog" :message="message" @yes="onDeleteConfirm" @no="onDeleteCancel" />
-        </section>
+           <Confirmation ref="confirmation" />
+       </section>
         <PageFooter>
             <ui5-button design="Emphasized" icon="add" @click="onCreate">Create</ui5-button>
         </PageFooter>
@@ -40,7 +40,7 @@ export default {
     data () {
         return {
             title: 'My Lists',
-            message: '',
+            // message: '',
             lists: []
         }
     },
@@ -58,36 +58,18 @@ export default {
             let unsortedlists = await Storage.getLists(this.user.uid)
             this.lists = unsortedlists.sort((a, b) => a.name.localeCompare(b.name))
         },
-        onDeleteConfirm () {
-            this.resolveConfirm()
-        },
-        onDeleteCancel () {
-            this.rejectConfirm()
-        },
-        confirmDialog (message) {
-            var dialog = document.getElementById('confirmationDialog')
-            return new Promise((resolve, reject) => {
-                this.resolveConfirm = resolve
-                this.rejectConfirm = reject
-                dialog.open()
-            })
-        },
         onListPress (listId) {
             this.$router.push({ name: 'list', params: { id: listId } })
         },
-        onListDelete (list) {
+        async onListDelete (list) {
             var index = this.lists.indexOf(list)
 
-            this.message = 'Are you sure to delete list ' + list.name + '?'
-            var self = this
-            var dialog = document.getElementById('confirmationDialog')
-            this.confirmDialog().then(() => {
-                self.lists.splice(index, 1)
-            }).then(() => {
-                dialog.close()
-            }).catch(() => {
-                dialog.close()
-            })
+            let message = 'Are you sure to delete list "' + list.name + '"?'
+            let confirmationAnswer = await this.$refs.confirmation.showDialog(message)
+            if (confirmationAnswer) {
+                this.lists.splice(index, 1)
+                this.$emit('deleteList', list.id)
+            }
         },
         onListEdit (listId) {
             this.$router.push({ name: 'editList', params: { id: listId } })
