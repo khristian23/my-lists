@@ -110,16 +110,25 @@ export default {
                 this.subtype = null
             }
         },
-        async onSave () {
-            let list = {
-                id: this.listId,
-                name: this.name,
-                description: this.description,
-                type: this.type,
-                subtype: this.subtype
+        validate () {
+            this.error = null
+            if (!this.$refs.form.validate()) {
+                this.error = 'Some fields have invalid entries'
             }
+            return !this.error
+        },
+        onSave () {
+            if (this.validate()) {
+                let list = {
+                    id: this.listId,
+                    name: this.name,
+                    description: this.description,
+                    type: this.type,
+                    subtype: this.subtype
+                }
 
-            this.$emit('saveList', list)
+                this.$emit('saveList', list)
+            }
         }
     }
 }

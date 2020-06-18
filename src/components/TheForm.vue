@@ -14,7 +14,10 @@ export default {
     methods: {
         validate () {
             return this.$children.reduce((r, c) => {
-                return c.validate ? c.validate() && r : true
+                if (c.validate) {
+                    return c.validate() && r
+                }
+                return r
             }, true)
         }
     }

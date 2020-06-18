@@ -37,7 +37,8 @@ export default {
             let error = 'List not found'
             throw error
         }
-        return idb.deleteObject('list', list)
+        await idb.deleteObjectsBy('item', { listId: listId })
+        return idb.deleteObjectsBy('list', { id: listId })
     },
 
     async getItems (userId, listId) {

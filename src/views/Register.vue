@@ -57,6 +57,7 @@ export default {
             }
         },
         validate () {
+            this.error = null
             if (!this.$refs.form.validate()) {
                 this.error = 'Some fields have invalid entries'
             } else {

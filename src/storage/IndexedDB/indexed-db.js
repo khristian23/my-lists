@@ -79,7 +79,7 @@ export default {
                     resolve(request.result)
                 }
             } else {
-                let range = IDBKeyRange.lowerBound(value)
+                let range = IDBKeyRange.only(value)
                 let objects = []
                 let index = store.index(field)
 
@@ -136,7 +136,7 @@ export default {
         })
     },
 
-    async deleteObject (table, object) {
+    async deleteObjectsBy (table, options) {
         let db = await this.getDb()
 
         return new Promise((resolve, reject) => {
@@ -149,7 +149,23 @@ export default {
             }
 
             let store = trans.objectStore(table)
-            store.delete(object.id)
+            let field = Object.keys(options)[0]
+            let value = options[field]
+
+            if (field === store.keyPath) {
+                store.delete(value)
+            } else {
+                let index = store.index(field)
+                let range = IDBKeyRange.only(value)
+
+                index.openKeyCursor(range).onsuccess = e => {
+                    let cursor = e.target.result
+                    if (cursor) {
+                        store.delete(cursor.primaryKey)
+                        cursor.continue()
+                    }
+                }
+            }
         })
     }
 }

@@ -38,7 +38,7 @@ export default {
     },
     data () {
         return {
-            listId: this.$route.params.id,
+            listId: parseInt(this.$route.params.id, 10),
             list: {},
             items: [],
             showCreateButton: true
