@@ -5,7 +5,7 @@
             <h4 v-if="noItems">No data found</h4>
             <TheList header="Pending" :items="pendingItems" iconAction="accept" v-if="hasPendingItems"
                 @itemPress="onItemPress" @itemAction="onItemDone" @itemDelete="onItemDelete" />
-            <TheList header="Done" :items="doneItems" iconAction="repost" v-if="hasDoneItems"
+            <TheList header="Done" :items="doneItems" iconAction="repost" v-if="hasDoneItems" scratched
                 @itemPress="onItemPress" @itemAction="onItemUndone" @itemDelete="onItemDelete" />
         </section>
         <PageFooter>

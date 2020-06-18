@@ -6,9 +6,9 @@
                 <div class="li-title-wrapper">
                     <div>
                         <ui5-icon class="li-icon" :name="item.icon" v-if="item.icon" />
-                        <span class="li-title">{{item.name}}</span>
+                        <span :class="getScratchedClass('li-title')">{{item.name}}</span>
                     </div>
-                    <span class="li-desc" v-if="item.description">{{item.description}}</span>
+                    <span :class="getScratchedClass('li-desc')" v-if="item.description">{{item.description}}</span>
                 </div>
                 <span class="li-info" v-if="item.items">{{item.items}} items</span>
             </div>
@@ -22,8 +22,11 @@ import '@ui5/webcomponents/dist/CustomListItem'
 
 export default {
     name: 'the-list',
-    props: ['header', 'items', 'iconAction'],
+    props: ['header', 'items', 'iconAction', 'scratched'],
     methods: {
+        getScratchedClass (baseClass) {
+            return this.scratched !== undefined ? baseClass + ' li-scratched' : baseClass
+        },
         onItemClick (event) {
             this.$emit('itemPress', event.detail.item.getAttribute('datakey'))
         },
@@ -64,6 +67,10 @@ export default {
     .li-icon {
         width: 0.75rem;
         height: 0.75rem;
+    }
+
+    .li-scratched {
+        text-decoration: line-through;
     }
 
     .li-title {
