@@ -1,6 +1,6 @@
 <template>
-    <ui5-list id="the-list" @itemClick="onItemClick" @itemDelete="onItemDelete" :header-text="header" mode="Delete">
-        <ui5-li-custom v-for="(item) in items" :key="item.id" :datakey="item.id" class="li-custom">
+    <draggable tag="ui5-list" v-model="localItems" :component-data="ui5listComponentData" @end="onDrop">
+        <ui5-li-custom v-for="(item) in localItems" :key="item.id" :datakey="item.id" class="li-custom">
             <div class="li-content">
                 <ui5-button :icon="iconAction" design="Transparent" @click="$emit('itemAction', item.id)" />
                 <div class="li-title-wrapper">
@@ -13,19 +13,54 @@
                 <span class="li-info" v-if="item.items">{{item.items}} items</span>
             </div>
         </ui5-li-custom>
-    </ui5-list>
+    </draggable>
 </template>
 
 <script>
 import '@ui5/webcomponents/dist/List'
 import '@ui5/webcomponents/dist/CustomListItem'
+import draggable from 'vuedraggable'
 
 export default {
     name: 'the-list',
     props: ['header', 'items', 'iconAction', 'scratched'],
+    components: {
+        draggable
+    },
+    data () {
+        return {
+            localItems: [],
+            ui5listComponentData: {
+                attrs: {
+                    mode: 'Delete',
+                    'header-text': this.header
+                },
+                on: {
+                    itemClick: this.onItemClick,
+                    itemDelete: this.onItemDelete
+                }
+            }
+        }
+    },
+    watch: {
+        items: {
+            immediate: true,
+            handler () {
+                this.localItems = [].concat(this.items).sort((a, b) => {
+                    return a.priority - b.priority
+                })
+            }
+        }
+    },
     methods: {
         getScratchedClass (baseClass) {
             return this.scratched !== undefined ? baseClass + ' li-scratched' : baseClass
+        },
+        onDrop () {
+            this.localItems.forEach((item, index) => {
+                item.priority = index + 1
+            })
+            this.$emit('orderUpdated', this.localItems)
         },
         onItemClick (event) {
             this.$emit('itemPress', event.detail.item.getAttribute('datakey'))

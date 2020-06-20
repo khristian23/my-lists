@@ -4,7 +4,8 @@
         <section class="page-content">
             <h4 v-if="noItems">No data found</h4>
             <TheList header="Pending" :items="pendingItems" iconAction="accept" v-if="hasPendingItems"
-                @itemPress="onItemPress" @itemAction="onItemDone" @itemDelete="onItemDelete" />
+                @itemPress="onItemPress" @itemAction="onItemDone" @itemDelete="onItemDelete"
+                @orderUpdated="onOrderUpdated" />
             <TheList header="Done" :items="doneItems" iconAction="repost" v-if="hasDoneItems" scratched
                 @itemPress="onItemPress" @itemAction="onItemUndone" @itemDelete="onItemDelete" />
         </section>
@@ -131,6 +132,13 @@ export default {
         },
         onItemDelete () {
 
+        },
+        onOrderUpdated (listItems) {
+            try {
+                Storage.saveListItems(this.user.uid, listItems)
+            } catch (e) {
+                alert(e)
+            }
         }
     }
 }

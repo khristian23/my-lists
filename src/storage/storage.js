@@ -29,8 +29,12 @@ export default {
         return storage.getItems(userId, listId)
     },
 
-    async saveListItem (userId, listId, listItem) {
-        return storage.saveListItem(userId, listId, listItem)
+    async saveListItem (userId, listItem) {
+        return storage.saveListItem(userId, listItem)
+    },
+
+    async saveListItems (userId, listItems) {
+        return storage.saveListItems(userId, listItems)
     }
 
 }

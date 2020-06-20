@@ -40,7 +40,6 @@ export default {
     data () {
         return {
             title: 'My Lists',
-            // message: '',
             lists: []
         }
     },

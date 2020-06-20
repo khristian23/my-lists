@@ -47,6 +47,16 @@ export default {
 
     async saveListItem (userId, listItem) {
         return this.saveObject('item', userId, listItem)
+    },
+
+    async saveListItems (userId, listItems) {
+        let itemsToSave = listItems
+        let modifiedAt = new Date().getTime()
+        itemsToSave.forEach(item => {
+            item.userId = userId
+            item.modifiedAt = modifiedAt
+        })
+        return idb.updateObjects('item', listItems)
     }
 
 }

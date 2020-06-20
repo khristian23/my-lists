@@ -103,12 +103,11 @@ export default {
 
         return new Promise(resolve => {
             let trans = db.transaction([table], 'readwrite')
-            trans.oncomplete = () => {
-                resolve()
-            }
-
             let store = trans.objectStore(table)
-            store.add(object)
+            store.add(object).onsuccess = r => {
+                object.id = r.target.result
+                resolve(object)
+            }
         })
     },
 
@@ -124,15 +123,39 @@ export default {
                 let data = Object.assign({}, request.result, object)
                 let updateRequest = store.put(data)
                 updateRequest.onsuccess = () => {
-                    resolve()
+                    resolve(data)
                 }
-                updateRequest.onerror = (e) => {
+                updateRequest.onerror = e => {
                     reject(e)
                 }
             }
-            request.onerror = (e) => {
+            request.onerror = e => {
                 reject(e)
             }
+        })
+    },
+
+    async updateObjects (table, objects) {
+        let db = await this.getDb()
+
+        return new Promise((resolve, reject) => {
+            let trans = db.transaction([table], 'readwrite')
+            let store = trans.objectStore(table)
+
+            trans.oncomplete = () => {
+                resolve(objects)
+            }
+
+            objects.forEach(object => {
+                let request = store.get(object[store.keyPath])
+
+                request.onsuccess = (r) => {
+                    let data = Object.assign({}, r.target.result, object)
+                    store.put(data).onerror = (e) => {
+                        reject(e)
+                    }
+                }
+            })
         })
     },
 

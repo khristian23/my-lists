@@ -56,9 +56,9 @@ export default {
         },
         async onSaveList (list) {
             try {
-                await Storage.saveList(this.user.uid, list)
+                let createdList = await Storage.saveList(this.user.uid, list)
                 this.showToast('List saved')
-                this.$router.replace({ name: 'list-manager' })
+                this.$router.replace({ name: 'list', params: { id: createdList.id } })
             } catch (e) {
                 alert(e)
             }
