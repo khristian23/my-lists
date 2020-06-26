@@ -41,8 +41,16 @@ export default {
         return idb.deleteObjectsBy('list', { id: listId })
     },
 
-    async getItems (userId, listId) {
+    async getListItems (userId, listId) {
         return idb.getObjectsBy('item', { listId: listId })
+    },
+
+    async getListItem (userId, listId, itemId) {
+        let item = await idb.getObjectsBy('item', { id: itemId })
+        if (!item || item.userId !== userId || item.listId !== listId) {
+            return null
+        }
+        return item
     },
 
     async saveListItem (userId, listItem) {

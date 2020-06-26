@@ -95,7 +95,7 @@ export default {
             })
         },
         async loadListItems () {
-            this.items = await Storage.getItems(this.user.uid, this.listId)
+            this.items = await Storage.getListItems(this.user.uid, this.listId)
         },
         async onQuickCreate () {
             let listItem = {

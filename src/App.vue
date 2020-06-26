@@ -4,6 +4,7 @@
             :user="user"
             @logout="onLogout"
             @saveList="onSaveList"
+            @saveItem="onSaveItem"
             @deleteList="onDeleteList"
             @addListItem="onAddListItem" />
         <ui5-toast ref="toast">{{toast}}</ui5-toast>
@@ -59,6 +60,15 @@ export default {
                 let createdList = await Storage.saveList(this.user.uid, list)
                 this.showToast('List saved')
                 this.$router.replace({ name: 'list', params: { id: createdList.id } })
+            } catch (e) {
+                alert(e)
+            }
+        },
+        async onSaveItem (item) {
+            try {
+                let createdItem = await Storage.saveListItem(this.user.uid, item)
+                this.showToast('Item saved')
+                this.$router.replace({ name: 'list', params: { id: createdItem.listId } })
             } catch (e) {
                 alert(e)
             }
