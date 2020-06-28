@@ -1,4 +1,5 @@
 import idb from './indexed-db'
+import Constants from '@/util/constants'
 
 export default {
 
@@ -14,11 +15,18 @@ export default {
         return list
     },
 
+    setObjectSyncStatus (object) {
+        if (object.syncStatus === undefined) {
+            object.syncStatus = Constants.status.changed
+        }
+    },
+
     async saveObject (table, userId, object) {
         let objectToSave = Object.assign({}, object, {
             userId: userId,
             modifiedAt: new Date().getTime()
         })
+        this.setObjectSyncStatus(objectToSave)
 
         if (object.id) {
             return idb.updateObject(table, objectToSave)
@@ -63,6 +71,7 @@ export default {
         itemsToSave.forEach(item => {
             item.userId = userId
             item.modifiedAt = modifiedAt
+            item.syncStatus = Constants.status.changed
         })
         return idb.updateObjects('item', listItems)
     }

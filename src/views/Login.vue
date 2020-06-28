@@ -13,6 +13,7 @@
                     </a>
                 </div>
             </SimpleForm>
+            <Confirmation ref="confirmation" />
         </section>
         <PageFooter>
             <ui5-button design="Transparent" @click="onRegister">Register</ui5-button>
@@ -26,9 +27,8 @@ import PageHeader from '@/components/TheHeader'
 import SimpleForm from '@/components/TheForm'
 import PageFooter from '@/components/TheFooter'
 import FormInput from '@/components/FormInput'
+import Confirmation from '@/components/TheConfirmation'
 import Firebase from 'firebase'
-
-const LOGON_MESSAGE = 'Login successfully'
 
 export default {
     name: 'login',
@@ -36,7 +36,8 @@ export default {
         PageHeader,
         SimpleForm,
         PageFooter,
-        FormInput
+        FormInput,
+        Confirmation
     },
     data () {
         return {
@@ -50,24 +51,36 @@ export default {
             this.$router.replace({ name: 'register' })
         },
         onLogin () {
-            Firebase.auth()
-                .signInWithEmailAndPassword(this.email, this.password)
-                .then(user => {
-                    this.$refs.form.showToast(LOGON_MESSAGE)
-                    this.$router.replace({ name: 'list-manager' })
+            try {
+                Firebase.auth()
+                    .signInWithEmailAndPassword(this.email, this.password)
+                    .then(async () => {
+                        let sync = await this.getSyncConfirmation()
+                        this.$emit('login', { sync: sync })
+                    }).catch(err => {
+                        this.error = err.message
+                    })
+            } catch (e) {
+                this.error = 'Cannot reach server. Try again later'
+            }
+        },
+        onGoogle () {
+            try {
+                const provider = new Firebase.auth.GoogleAuthProvider()
+
+                Firebase.auth().signInWithPopup(provider).then(async () => {
+                    let sync = await this.getSyncConfirmation()
+                    this.$emit('login', { sync: sync })
                 }).catch(err => {
                     this.error = err.message
                 })
+            } catch (e) {
+                this.error = 'Cannot reach server. Try again later'
+            }
         },
-        onGoogle () {
-            const provider = new Firebase.auth.GoogleAuthProvider()
-
-            Firebase.auth().signInWithPopup(provider).then(result => {
-                this.$refs.form.showToast(LOGON_MESSAGE)
-                this.$router.replace({ name: 'list-manager' })
-            }).catch(err => {
-                this.error = err.message
-            })
+        async getSyncConfirmation () {
+            let message = 'Would you like to synchronize locally stored lists?'
+            return this.$refs.confirmation.showDialog(message)
         }
     }
 }

@@ -8,6 +8,7 @@
             </SimpleForm>
         </section>
         <PageFooter>
+            <ui5-button icon="synchronize" @click="$emit('synchronize')">Synchronize</ui5-button>
             <ui5-button design="Emphasized" icon="log" @click="$emit('logout')">Logout</ui5-button>
         </PageFooter>
     </div>
@@ -20,6 +21,7 @@ import PageFooter from '@/components/TheFooter'
 import FormInput from '@/components/FormInput'
 
 import '@ui5/webcomponents-icons/dist/icons/log'
+import '@ui5/webcomponents-icons/dist/icons/synchronize'
 
 export default {
     name: 'profile',

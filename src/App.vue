@@ -2,11 +2,13 @@
     <div class="app">
         <router-view
             :user="user"
+            :footerMessage="footerMessage"
+            @synchronize="triggerSynchronization"
+            @login="onLogin"
             @logout="onLogout"
             @saveList="onSaveList"
             @saveItem="onSaveItem"
-            @deleteList="onDeleteList"
-            @addListItem="onAddListItem" />
+            @deleteList="onDeleteList" />
         <ui5-toast ref="toast">{{toast}}</ui5-toast>
     </div>
 </template>
@@ -14,8 +16,12 @@
 <script>
 import '@ui5/webcomponents-base/dist/features/browsersupport/IE11'
 import Firebase from 'firebase'
+import Firestore from '@/storage/Firestore/firestore' // eslint-disable-line no-unused-vars
 import Storage from '@/storage/storage'
+import Sync from '@/storage/Sync'
 import '@ui5/webcomponents/dist/Toast'
+
+const LOGON_MESSAGE = 'Login successfully'
 
 export default {
     name: 'main-app',
@@ -23,37 +29,64 @@ export default {
         return {
             user: null,
             lists: [],
-            toast: ''
+            toast: '',
+            footerMessage: ''
         }
     },
     async created () {
-        try {
-            Firebase.auth().signInAnonymously()
-            Firebase.auth().onAuthStateChanged(async user => {
-                if (user) {
-                    // User was authenticated or anonymous (isAnonimous = true)
-                    // Firebase can pull this info from local IndexedDB is no network found
-                    this.user = user
-                } else {
-                    // No network found and no local firebase storage
-                    this.user = Storage.createLocalAnonymousUser()
-                }
-            })
-        } catch (error) {
-            this.user = Storage.createLocalAnonymousUser()
+        let user = this.listenToFirebaseUserChanges()
+        if (user) {
+            // Cached Firebase user found
+            this.triggerSynchronization()
         }
     },
     methods: {
+        async listenToFirebaseUserChanges () {
+            return new Promise(resolve => {
+                try {
+                    Firebase.auth().onAuthStateChanged(async user => {
+                        if (user) {
+                            // User was authenticated or is anonymous (isAnonimous = true)
+                            // Firebase can pull this info from local IndexedDB is no network found
+                            this.user = user
+                        } else {
+                            // No network found and no local firebase storage
+                            this.setAnonymousUser()
+                        }
+                    })
+                } catch (error) {
+                    this.setAnonymousUser()
+                }
+            })
+        },
+        setAnonymousUser () {
+            this.user = Storage.createLocalAnonymousUser()
+        },
         showToast (message) {
             this.toast = message
             this.$refs.toast.show()
         },
+        onLogin (options) {
+            this.showToast(LOGON_MESSAGE)
+            this.$router.replace({ name: 'list-manager' })
+            if (options.sync) {
+                this.triggerSynchronization()
+            }
+        },
         onLogout () {
             Firebase.auth().signOut()
                 .then(() => {
-                    this.user = null
-                    this.$router.replace('list-manager')
+                    this.$router.replace({ name: 'list-manager' })
                 })
+        },
+        async triggerSynchronization () {
+            let result = await Sync.synchronize()
+            if (!result) {
+                this.setAnonymousUser()
+            } else {
+                let currentRoute = this.$router.currentRoute
+                this.$router.replace({ name: currentRoute.name, params: currentRoute.params })
+            }
         },
         async onSaveList (list) {
             try {
@@ -66,6 +99,10 @@ export default {
         },
         async onSaveItem (item) {
             try {
+                let list = await Storage.getList(this.user.uid, item.listId)
+                list.syncStatus = this.$Const.status.changed
+                await Storage.saveList(this.user.uid, list)
+
                 let createdItem = await Storage.saveListItem(this.user.uid, item)
                 this.showToast('Item saved')
                 this.$router.replace({ name: 'list', params: { id: createdItem.listId } })
@@ -77,14 +114,6 @@ export default {
             try {
                 await Storage.deleteList(this.user.uid, listId)
                 this.showToast('List deleted')
-            } catch (e) {
-                alert(e)
-            }
-        },
-        async onAddListItem (listItem) {
-            try {
-                await Storage.addListItem(this.user.uid, listItem)
-                this.showToast('List item saved')
             } catch (e) {
                 alert(e)
             }

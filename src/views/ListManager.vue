@@ -4,7 +4,7 @@
         <section class="page-content">
             <TheList :items="lists" iconAction="edit"
                 @itemPress="onListPress" @itemAction="onListEdit" @itemDelete="onListDelete" />
-           <Confirmation ref="confirmation" />
+            <Confirmation ref="confirmation" />
        </section>
         <PageFooter>
             <ui5-button design="Emphasized" icon="add" @click="onCreate">Create</ui5-button>
@@ -46,9 +46,10 @@ export default {
     watch: {
         user: {
             handler () {
-                this.getCurrentUserLists()
+                if (this.user) {
+                    this.getCurrentUserLists()
+                }
             },
-            deep: true,
             immediate: true
         }
     },

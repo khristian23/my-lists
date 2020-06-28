@@ -42,7 +42,7 @@ export default {
             async handler () {
                 if (this.$route.params.id !== 'new') {
                     this.itemId = parseInt(this.$route.params.id)
-                    this.item = await Storage.getListItem(this.user.uid, this.itemId, this.itemId)
+                    this.item = await Storage.getListItem(this.user.uid, this.listId, this.itemId)
                     if (!this.item) {
                         this.$router.replace({ name: 'list', params: { id: this.listId } })
                     } else {
@@ -78,7 +78,8 @@ export default {
                 let listItem = {
                     id: this.itemId,
                     listId: this.listId,
-                    name: this.name
+                    name: this.name,
+                    syncStatus: this.$Const.status.changed
                 }
 
                 this.$emit('saveItem', listItem)

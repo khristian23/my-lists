@@ -97,16 +97,15 @@ export default {
         async loadListItems () {
             this.items = await Storage.getListItems(this.user.uid, this.listId)
         },
-        async onQuickCreate () {
+        onQuickCreate () {
             let listItem = {
                 name: this.$refs.quick.value,
                 status: 'Pending',
                 listId: this.listId
             }
-            await Storage.saveListItem(this.user.uid, listItem)
-            this.loadListItems()
             this.$refs.quick.value = ''
             this.$refs.quick.focus()
+            this.saveListItem(listItem)
         },
         onCreate () {
             this.$router.push({ name: 'item', params: { list: this.listId, id: 'new' } })
@@ -114,21 +113,19 @@ export default {
         onItemPress (itemId) {
             this.$router.push({ name: 'item', params: { list: this.listId, id: itemId } })
         },
-        async onItemDone (itemId) {
+        onItemDone (itemId) {
             let listItem = {
                 id: itemId,
                 status: 'Done'
             }
-            await Storage.saveListItem(this.user.uid, listItem)
-            this.loadListItems()
+            this.saveListItem(listItem)
         },
-        async onItemUndone (itemId) {
+        onItemUndone (itemId) {
             let listItem = {
                 id: itemId,
                 status: 'Pending'
             }
-            await Storage.saveListItem(this.user.uid, listItem)
-            this.loadListItems()
+            this.saveListItem(listItem)
         },
         onItemDelete () {
 
@@ -136,9 +133,21 @@ export default {
         onOrderUpdated (listItems) {
             try {
                 Storage.saveListItems(this.user.uid, listItems)
+                this.flagListAsChanged()
             } catch (e) {
                 alert(e)
             }
+        },
+        async flagListAsChanged () {
+            let list = await Storage.getList(this.user.uid, this.listId)
+            list.syncStatus = this.$Const.status.changed
+            await Storage.saveList(this.user.uid, list)
+        },
+        async saveListItem (listItem) {
+            await this.flagListAsChanged()
+            listItem.syncStatus = this.$Const.status.changed
+            await Storage.saveListItem(this.user.uid, listItem)
+            this.loadListItems()
         }
     }
 }
