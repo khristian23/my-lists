@@ -65,15 +65,23 @@ export default {
         return this.saveObject('item', userId, listItem)
     },
 
-    async saveListItems (userId, listItems) {
-        let itemsToSave = listItems
+    processObjectsToSave (table, userId, objects) {
+        let objectToSave = objects
         let modifiedAt = new Date().getTime()
-        itemsToSave.forEach(item => {
-            item.userId = userId
-            item.modifiedAt = modifiedAt
-            item.syncStatus = Constants.status.changed
+        objectToSave.forEach(object => {
+            object.userId = userId
+            object.modifiedAt = modifiedAt
+            object.syncStatus = Constants.status.changed
         })
-        return idb.updateObjects('item', listItems)
+        return idb.updateObjects(table, objectToSave)
+    },
+
+    async saveLists (userId, lists) {
+        return this.processObjectsToSave('list', userId, lists)
+    },
+
+    async saveListItems (userId, listItems) {
+        return this.processObjectsToSave('item', userId, listItems)
     }
 
 }

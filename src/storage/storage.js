@@ -21,6 +21,10 @@ export default {
         return storage.saveList(userId, list)
     },
 
+    async saveLists (userId, lists) {
+        return storage.saveLists(userId, lists)
+    },
+
     async deleteList (userId, listId) {
         return storage.deleteList(userId, listId)
     },

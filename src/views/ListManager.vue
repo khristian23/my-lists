@@ -3,7 +3,8 @@
         <PageHeader :title="title" :user="user" />
         <section class="page-content">
             <TheList :items="lists" iconAction="edit"
-                @itemPress="onListPress" @itemAction="onListEdit" @itemDelete="onListDelete" />
+                @itemPress="onListPress" @itemAction="onListEdit" @itemDelete="onListDelete"
+                @orderUpdated="onOrderUpdated" />
             <Confirmation ref="confirmation" />
        </section>
         <PageFooter>
@@ -76,6 +77,13 @@ export default {
         },
         onCreate () {
             this.$router.push({ name: 'editList', params: { id: 'new' } })
+        },
+        onOrderUpdated (lists) {
+            try {
+                Storage.saveLists(this.user.uid, lists)
+            } catch (e) {
+                alert(e)
+            }
         }
     }
 }
