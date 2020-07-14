@@ -46,6 +46,14 @@ export default {
             error: ''
         }
     },
+    created () {
+        Firebase.auth().getRedirectResult().then(async (result) => {
+            if (result.user) {
+                let sync = await this.getSyncConfirmation()
+                this.$emit('login', { sync: sync })
+            }
+        })
+    },
     methods: {
         onRegister () {
             this.$router.replace({ name: 'register' })
@@ -67,13 +75,7 @@ export default {
         onGoogle () {
             try {
                 const provider = new Firebase.auth.GoogleAuthProvider()
-
-                Firebase.auth().signInWithPopup(provider).then(async () => {
-                    let sync = await this.getSyncConfirmation()
-                    this.$emit('login', { sync: sync })
-                }).catch(err => {
-                    this.error = err.message
-                })
+                Firebase.auth().signInWithRedirect(provider)
             } catch (e) {
                 this.error = 'Cannot reach server. Try again later'
             }

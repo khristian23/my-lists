@@ -7,7 +7,19 @@
     "files": {}
   },
   "installed_plugins": {
+    "cordova-plugin-browsertab": {
+      "PACKAGE_NAME": "com.christian.ui.mylists"
+    },
+    "cordova-plugin-buildinfo": {
+      "PACKAGE_NAME": "com.christian.ui.mylists"
+    },
     "cordova-plugin-whitelist": {
+      "PACKAGE_NAME": "com.christian.ui.mylists"
+    },
+    "cordova-universal-links-plugin": {
+      "PACKAGE_NAME": "com.christian.ui.mylists"
+    },
+    "cordova-plugin-inappbrowser": {
       "PACKAGE_NAME": "com.christian.ui.mylists"
     }
   },
