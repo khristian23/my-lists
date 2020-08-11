@@ -1,5 +1,7 @@
 import firestore from './firestore'
 import firebase from 'firebase'
+import List from '@/storage/List'
+import ListItem from '@/storage/ListItem'
 
 export default {
 
@@ -37,7 +39,16 @@ export default {
         }
     },
 
+    getFirebaseObject (object) {
+        if (object instanceof List || object instanceof ListItem) {
+            return object.toFirebaseObject()
+        }
+        return object
+    },
+
     saveList (userId, list) {
+        list = this.getFirebaseObject(list)
+
         if (!list.firebaseId) {
             return firestore.collection('users').doc(userId)
                 .collection('lists')
@@ -67,6 +78,8 @@ export default {
     },
 
     saveListItem (userId, listId, listItem) {
+        listItem = this.getFirebaseObject(listItem)
+
         if (!listItem.firebaseId) {
             return firestore.collection('users').doc(userId)
                 .collection('lists').doc(listId)

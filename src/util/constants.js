@@ -33,6 +33,8 @@ export default {
         }]
     },
     status: {
-        changed: 'M'
+        none: '',
+        changed: 'M',
+        deleted: 'D'
     }
 }

@@ -1,7 +1,16 @@
 import idb from './indexed-db'
 import Constants from '@/util/constants'
+import List from '@/storage/List'
+import ListItem from '@/storage/ListItem'
 
 export default {
+
+    getObject (object) {
+        if (object instanceof List || object instanceof ListItem) {
+            return object.toObject()
+        }
+        return object
+    },
 
     async getLists (userId) {
         return idb.getObjectsBy('list', { userId: userId })
@@ -15,23 +24,18 @@ export default {
         return list
     },
 
-    setObjectSyncStatus (object) {
-        if (object.syncStatus === undefined) {
-            object.syncStatus = Constants.status.changed
-        }
+    setModificationStatus (userId, object) {
+        object.setSyncStatus(Constants.status.changed, new Date().getTime())
+        object.setUserId(userId)
     },
 
     async saveObject (table, userId, object) {
-        let objectToSave = Object.assign({}, object, {
-            userId: userId,
-            modifiedAt: new Date().getTime()
-        })
-        this.setObjectSyncStatus(objectToSave)
+        this.setModificationStatus(userId, object)
 
-        if (object.id) {
+        let objectToSave = this.getObject(object)
+        if (object.getId()) {
             return idb.updateObject(table, objectToSave)
         }
-        delete objectToSave.id
         return idb.addObject(table, objectToSave)
     },
 
@@ -66,14 +70,8 @@ export default {
     },
 
     processObjectsToSave (table, userId, objects) {
-        let objectToSave = objects
-        let modifiedAt = new Date().getTime()
-        objectToSave.forEach(object => {
-            object.userId = userId
-            object.modifiedAt = modifiedAt
-            object.syncStatus = Constants.status.changed
-        })
-        return idb.updateObjects(table, objectToSave)
+        objects.forEach(object => this.setModificationStatus(userId, object))
+        return idb.updateObjects(table, objects.map(object => this.getObject(object)))
     },
 
     async saveLists (userId, lists) {
@@ -82,6 +80,10 @@ export default {
 
     async saveListItems (userId, listItems) {
         return this.processObjectsToSave('item', userId, listItems)
+    },
+
+    async getLastSynchonizationTimeForUser (userId) {
+        return idb.getObjectsBy('sync', { userId: userId })
     }
 
 }

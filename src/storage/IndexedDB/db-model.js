@@ -29,6 +29,14 @@ export const model = {
                 'modifiedAt',
                 'userId'
             ]
+        },
+        'sync': {
+            config: {
+                keyPath: 'userId'
+            },
+            indexes: [
+                'syncTime'
+            ]
         }
     }
 }
