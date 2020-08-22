@@ -14,3 +14,4 @@ if (module.hot) {
   // Execute each test suite
   context.keys().forEach(context);
   module.exports = context;
+  

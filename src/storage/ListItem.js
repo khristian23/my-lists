@@ -1,12 +1,17 @@
-class ListItem {
+import ListObject from './ListObject'
+
+class ListItem extends ListObject {
     constructor (data) {
+        super(data)
         this._listId = data.listId
         this._id = data.id
         this._name = data.name
-        this._priority = data.priority
+        this._priority = data.priority || 0
         this._modifiedAt = data.modifiedAt
         this._status = data.status
+        this._syncStatus = data.syncStatus
         this._firebaseId = data.firebaseId
+        this._user = data.user
     }
 
     get id () {
@@ -54,22 +59,14 @@ class ListItem {
     }
 
     toFirebaseObject () {
-        return Object.keys(this).reduce((object, property) => {
-            if (this.hasOwnProperty(property) && property.substr(0, 1) !== '_') {
-                object[property] = this[property]
-            }
-            return object
-        }, {})
+        let keys = ['id', 'name', 'priority', 'modifiedAt', 'status']
+        return this._createObject(keys)
     }
 
     toObject () {
-        return Object.keys(this).reduce((object, property) => {
-            let fixedProperty = property.substr(1)
-            if (this.hasOwnProperty(fixedProperty)) {
-                object[fixedProperty] = this[property]
-            }
-            return object
-        }, {})
+        let keys = ['id', 'name', 'priority', 'modifiedAt', 'status',
+            'syncStatus', 'firebaseId', 'user']
+        return this._createObject(keys)
     }
 }
 

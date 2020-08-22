@@ -1,5 +1,8 @@
-class List {
+import ListObject from './ListObject'
+
+class List extends ListObject {
     constructor (data) {
+        super(data)
         this._id = data.id
         this._name = data.name
         this._description = data.description
@@ -81,7 +84,7 @@ class List {
     _createObject (keys) {
         return keys.reduce((object, property) => {
             if (this.hasOwnProperty('_' + property)) {
-                object[property] = this['_' + property]
+                object[property] = typeof this['_' + property] === 'undefined' ? '' : this['_' + property]
             }
             return object
         }, {})

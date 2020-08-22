@@ -1,3 +1,4 @@
+const vueLoaderConfig = require('../build/vue-loader.conf')
 const path = require('path')
 
 function resolve (dir) {
@@ -47,4 +48,16 @@ exports.resolve = () => ({
             '@': resolve('src')
         }
     },
+});
+
+exports.module = () => ({
+  module: {
+    rules: [
+        {
+            test: /\.vue$/,
+            loader: 'vue-loader',
+            options: vueLoaderConfig
+        }
+    ]
+  }
 })

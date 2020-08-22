@@ -25,15 +25,16 @@ export default {
     },
 
     setModificationStatus (userId, object) {
-        object.setSyncStatus(Constants.status.changed, new Date().getTime())
-        object.setUserId(userId)
+        object.syncStatus = Constants.status.changed
+        object.modifiedAt = new Date().getTime()
+        object.userId = userId
     },
 
     async saveObject (table, userId, object) {
         this.setModificationStatus(userId, object)
 
         let objectToSave = this.getObject(object)
-        if (object.getId()) {
+        if (object.id) {
             return idb.updateObject(table, objectToSave)
         }
         return idb.addObject(table, objectToSave)
