@@ -1,7 +1,7 @@
 export const model = {
 
     tables: {
-        'list': {
+        list: {
             config: {
                 autoIncrement: true,
                 keyPath: 'id'
@@ -16,7 +16,7 @@ export const model = {
                 'userId'
             ]
         },
-        'item': {
+        item: {
             config: {
                 autoIncrement: true,
                 keyPath: 'id'
@@ -30,7 +30,7 @@ export const model = {
                 'userId'
             ]
         },
-        'sync': {
+        sync: {
             config: {
                 keyPath: 'userId'
             },

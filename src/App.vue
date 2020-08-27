@@ -34,7 +34,7 @@ export default {
         }
     },
     async created () {
-        let user = this.listenToFirebaseUserChanges()
+        const user = this.listenToFirebaseUserChanges()
         if (user) {
             // Cached Firebase user found
             this.triggerSynchronization()
@@ -80,17 +80,17 @@ export default {
                 })
         },
         async triggerSynchronization () {
-            let result = await Sync.synchronize()
+            const result = await Sync.synchronize()
             if (!result) {
                 this.setAnonymousUser()
             } else {
-                let currentRoute = this.$router.currentRoute
+                const currentRoute = this.$router.currentRoute
                 this.$router.replace({ name: currentRoute.name, params: currentRoute.params })
             }
         },
         async onSaveList (list) {
             try {
-                let createdList = await Storage.saveList(this.user.uid, list)
+                const createdList = await Storage.saveList(this.user.uid, list)
                 this.showToast('List saved')
                 this.$router.replace({ name: 'list', params: { id: createdList.id } })
             } catch (e) {
@@ -99,11 +99,11 @@ export default {
         },
         async onSaveItem (item) {
             try {
-                let list = await Storage.getList(this.user.uid, item.listId)
+                const list = await Storage.getList(this.user.uid, item.listId)
                 list.syncStatus = this.$Const.status.changed
                 await Storage.saveList(this.user.uid, list)
 
-                let createdItem = await Storage.saveListItem(this.user.uid, item)
+                const createdItem = await Storage.saveListItem(this.user.uid, item)
                 this.showToast('Item saved')
                 this.$router.replace({ name: 'list', params: { id: createdItem.listId } })
             } catch (e) {

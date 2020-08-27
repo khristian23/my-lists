@@ -2,6 +2,7 @@
 const path = require('path')
 const config = require('../config')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const packageConfig = require('../package.json')
 
 exports.assetsPath = function (_path) {
@@ -14,6 +15,10 @@ exports.assetsPath = function (_path) {
 
 exports.cssLoaders = function (options) {
   options = options || {}
+
+  const minicssLoader = {
+    loader: MiniCssExtractPlugin.loader
+  }
 
   const cssLoader = {
     loader: 'css-loader',
@@ -31,7 +36,7 @@ exports.cssLoaders = function (options) {
 
   // generate loader string to be used with extract text plugin
   function generateLoaders (loader, loaderOptions) {
-    const loaders = options.usePostCSS ? [cssLoader, postcssLoader] : [cssLoader]
+    const loaders = options.usePostCSS ? [minicssLoader, cssLoader, postcssLoader] : [minicssLoader, cssLoader]
 
     if (loader) {
       loaders.push({

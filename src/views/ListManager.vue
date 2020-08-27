@@ -56,7 +56,7 @@ export default {
     },
     methods: {
         async getCurrentUserLists () {
-            let unsortedlists = await Storage.getLists(this.user.uid)
+            const unsortedlists = await Storage.getLists(this.user.uid)
             this.lists = unsortedlists.sort((a, b) => a.name.localeCompare(b.name))
         },
         onListPress (listId) {
@@ -65,8 +65,8 @@ export default {
         async onListDelete (list) {
             var index = this.lists.indexOf(list)
 
-            let message = 'Are you sure to delete list "' + list.name + '"?'
-            let confirmationAnswer = await this.$refs.confirmation.showDialog(message)
+            const message = 'Are you sure to delete list "' + list.name + '"?'
+            const confirmationAnswer = await this.$refs.confirmation.showDialog(message)
             if (confirmationAnswer) {
                 this.lists.splice(index, 1)
                 this.$emit('deleteList', list.id)

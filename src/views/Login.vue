@@ -49,7 +49,7 @@ export default {
     created () {
         Firebase.auth().getRedirectResult().then(async (result) => {
             if (result.user) {
-                let sync = await this.getSyncConfirmation()
+                const sync = await this.getSyncConfirmation()
                 this.$emit('login', { sync: sync })
             }
         })
@@ -63,7 +63,7 @@ export default {
                 Firebase.auth()
                     .signInWithEmailAndPassword(this.email, this.password)
                     .then(async () => {
-                        let sync = await this.getSyncConfirmation()
+                        const sync = await this.getSyncConfirmation()
                         this.$emit('login', { sync: sync })
                     }).catch(err => {
                         this.error = err.message
@@ -81,7 +81,7 @@ export default {
             }
         },
         async getSyncConfirmation () {
-            let message = 'Would you like to synchronize locally stored lists?'
+            const message = 'Would you like to synchronize locally stored lists?'
             return this.$refs.confirmation.showDialog(message)
         }
     }

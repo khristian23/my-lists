@@ -1,4 +1,4 @@
-const vueLoaderConfig = require('../build/vue-loader.conf')
+const vueLoaderConfig = require('../../build/vue-loader.conf')
 const path = require('path')
 
 function resolve (dir) {
@@ -7,6 +7,7 @@ function resolve (dir) {
 
 exports.devServer = ({ host, port } = {}) => ({
     devServer: {
+      inline: false,
       stats: "errors-only",
       host, // Defaults to `localhost`
       port, // Defaults to 8080

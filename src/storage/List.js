@@ -73,6 +73,10 @@ class List extends ListObject {
         this._userId = userId
     }
 
+    get userId () {
+        return this._userId
+    }
+
     addListItems (listItems) {
         listItems.forEach(item => this.addListItem(item))
     }

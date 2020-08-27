@@ -11,7 +11,7 @@ export default {
             if (DB) {
                 return resolve(DB)
             }
-            let request = window.indexedDB.open(DB_NAME, DB_VERSION)
+            const request = window.indexedDB.open(DB_NAME, DB_VERSION)
 
             request.onerror = e => {
                 reject(e)
@@ -23,11 +23,11 @@ export default {
             }
 
             request.onupgradeneeded = e => {
-                let db = e.target.result
-                let tables = model.tables
+                const db = e.target.result
+                const tables = model.tables
 
                 Object.keys(tables).forEach(t => {
-                    var store = db.createObjectStore(t, tables[t].config)
+                    const store = db.createObjectStore(t, tables[t].config)
                     tables[t].indexes.forEach(i => {
                         store.createIndex(i, i, { unique: false })
                     })
@@ -37,20 +37,20 @@ export default {
     },
 
     async getObjects (table) {
-        let db = await this.getDb()
+        const db = await this.getDb()
 
         return new Promise(resolve => {
-            let trans = db.transaction([table], 'readonly')
+            const trans = db.transaction([table], 'readonly')
 
             trans.oncomplete = () => {
                 resolve(objects)
             }
 
-            let store = trans.objectStore(table)
-            let objects = []
+            const store = trans.objectStore(table)
+            const objects = []
 
             store.openCursor().onsuccess = e => {
-                let cursor = e.target.result
+                const cursor = e.target.result
                 if (cursor) {
                     objects.push(cursor.value)
                     cursor.continue()
@@ -60,35 +60,35 @@ export default {
     },
 
     async getObjectsBy (table, options) {
-        let db = await this.getDb()
+        const db = await this.getDb()
 
         if (!options) {
             return this.getObjects()
         }
 
         return new Promise(resolve => {
-            let trans = db.transaction([table], 'readonly')
-            let store = trans.objectStore(table)
+            const trans = db.transaction([table], 'readonly')
+            const store = trans.objectStore(table)
 
-            let field = Object.keys(options)[0]
-            let value = options[field]
+            const field = Object.keys(options)[0]
+            const value = options[field]
 
             if (field === store.keyPath) {
-                let request = store.get(parseInt(value, 10))
+                const request = store.get(parseInt(value, 10))
                 request.onsuccess = () => {
                     resolve(request.result)
                 }
             } else {
-                let range = IDBKeyRange.only(value)
-                let objects = []
-                let index = store.index(field)
+                const range = IDBKeyRange.only(value)
+                const objects = []
+                const index = store.index(field)
 
                 trans.oncomplete = () => {
                     resolve(objects)
                 }
 
                 index.openCursor(range).onsuccess = e => {
-                    let cursor = e.target.result
+                    const cursor = e.target.result
                     if (cursor) {
                         objects.push(cursor.value)
                         cursor.continue()
@@ -99,11 +99,11 @@ export default {
     },
 
     async addObject (table, object) {
-        let db = await this.getDb()
+        const db = await this.getDb()
 
         return new Promise(resolve => {
-            let trans = db.transaction([table], 'readwrite')
-            let store = trans.objectStore(table)
+            const trans = db.transaction([table], 'readwrite')
+            const store = trans.objectStore(table)
             store.add(object).onsuccess = r => {
                 object.id = r.target.result
                 resolve(object)
@@ -112,16 +112,16 @@ export default {
     },
 
     async updateObject (table, object) {
-        let db = await this.getDb()
+        const db = await this.getDb()
 
         return new Promise((resolve, reject) => {
-            let trans = db.transaction([table], 'readwrite')
-            let store = trans.objectStore(table)
-            let request = store.get(object[store.keyPath])
+            const trans = db.transaction([table], 'readwrite')
+            const store = trans.objectStore(table)
+            const request = store.get(object[store.keyPath])
 
             request.onsuccess = () => {
-                let data = Object.assign({}, request.result, object)
-                let updateRequest = store.put(data)
+                const data = Object.assign({}, request.result, object)
+                const updateRequest = store.put(data)
                 updateRequest.onsuccess = () => {
                     resolve(data)
                 }
@@ -136,21 +136,21 @@ export default {
     },
 
     async updateObjects (table, objects) {
-        let db = await this.getDb()
+        const db = await this.getDb()
 
         return new Promise((resolve, reject) => {
-            let trans = db.transaction([table], 'readwrite')
-            let store = trans.objectStore(table)
+            const trans = db.transaction([table], 'readwrite')
+            const store = trans.objectStore(table)
 
             trans.oncomplete = () => {
                 resolve(objects)
             }
 
             objects.forEach(object => {
-                let request = store.get(object[store.keyPath])
+                const request = store.get(object[store.keyPath])
 
                 request.onsuccess = (r) => {
-                    let data = Object.assign({}, r.target.result, object)
+                    const data = Object.assign({}, r.target.result, object)
                     store.put(data).onerror = (e) => {
                         reject(e)
                     }
@@ -160,10 +160,10 @@ export default {
     },
 
     async deleteObjectsBy (table, options) {
-        let db = await this.getDb()
+        const db = await this.getDb()
 
         return new Promise((resolve, reject) => {
-            let trans = db.transaction([table], 'readwrite')
+            const trans = db.transaction([table], 'readwrite')
             trans.oncomplete = () => {
                 resolve()
             }
@@ -171,18 +171,18 @@ export default {
                 reject(e)
             }
 
-            let store = trans.objectStore(table)
-            let field = Object.keys(options)[0]
-            let value = options[field]
+            const store = trans.objectStore(table)
+            const field = Object.keys(options)[0]
+            const value = options[field]
 
             if (field === store.keyPath) {
                 store.delete(value)
             } else {
-                let index = store.index(field)
-                let range = IDBKeyRange.only(value)
+                const index = store.index(field)
+                const range = IDBKeyRange.only(value)
 
                 index.openKeyCursor(range).onsuccess = e => {
-                    let cursor = e.target.result
+                    const cursor = e.target.result
                     if (cursor) {
                         store.delete(cursor.primaryKey)
                         cursor.continue()
