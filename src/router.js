@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 
-import ListManager from '@/views/ListManager.vue'
+import Lists from '@/views/Lists.vue'
+import Consts from '@/util/constants'
 
 Vue.use(Router)
 
@@ -9,31 +10,31 @@ Vue.use(Router)
 export default new Router({
     routes: [{
         path: '/',
-        name: 'list-manager',
-        component: ListManager
+        name: Consts.routes.lists,
+        component: Lists
     }, {
-        path: '/list/:id',
-        name: 'list',
+        path: '/list/:id/items',
+        name: Consts.routes.listItems,
         component: () => import(/* webpackChunkName: "ListDetails" */ '@/views/ListDetails')
     }, {
         path: '/list/:list/item/:id',
-        name: 'item',
+        name: Consts.routes.listItem,
         component: () => import(/* webpackChunkName: "ListItem" */ '@/views/ListItem')
     }, {
-        path: '/edit/:id',
-        name: 'editList',
+        path: '/list/:id',
+        name: Consts.routes.list,
         component: () => import(/* webpackChunkName: "EditList" */ '@/views/EditList')
     }, {
         path: '/login',
-        name: 'login',
+        name: Consts.routes.login,
         component: () => import(/* webpackChunkName: "Login" */ '@/views/Login')
     }, {
         path: '/register',
-        name: 'register',
+        name: Consts.routes.register,
         component: () => import(/* webpackChunkName: "Register" */ '@/views/Register')
     }, {
         path: '/profile',
-        name: 'profile',
+        name: Consts.routes.profile,
         component: () => import(/* webpackChunkName: "Profile" */ '@/views/Profile')
     }]
 })

@@ -36,5 +36,14 @@ export default {
         none: '',
         changed: 'M',
         deleted: 'D'
+    },
+    routes: {
+        lists: 'lists',
+        list: 'list',
+        listItems: 'list-items',
+        listItem: 'list-item',
+        login: 'login',
+        register: 'register',
+        profile: 'profile'
     }
 }

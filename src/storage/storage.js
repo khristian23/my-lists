@@ -1,4 +1,11 @@
-import storage from './IndexedDB/storage-idb'
+import indexedDB from './IndexedDB/storage-idb'
+import localStorage from './localStorage/storage-local'
+
+let storage = indexedDB
+
+if (window.Cypress) {
+    storage = localStorage
+}
 
 export default {
 
@@ -10,6 +17,7 @@ export default {
     },
 
     async getLists (userId) {
+        debugger
         return storage.getLists(userId)
     },
 

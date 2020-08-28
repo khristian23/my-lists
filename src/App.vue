@@ -68,7 +68,7 @@ export default {
         },
         onLogin (options) {
             this.showToast(LOGON_MESSAGE)
-            this.$router.replace({ name: 'list-manager' })
+            this.$router.replace({ name: this.$Const.routes.lists })
             if (options.sync) {
                 this.triggerSynchronization()
             }
@@ -76,7 +76,7 @@ export default {
         onLogout () {
             Firebase.auth().signOut()
                 .then(() => {
-                    this.$router.replace({ name: 'list-manager' })
+                    this.$router.replace({ name: this.$Const.routes.lists })
                 })
         },
         async triggerSynchronization () {
@@ -92,7 +92,7 @@ export default {
             try {
                 const createdList = await Storage.saveList(this.user.uid, list)
                 this.showToast('List saved')
-                this.$router.replace({ name: 'list', params: { id: createdList.id } })
+                this.$router.replace({ name: this.$Const.routes.lists, params: { id: createdList.id } })
             } catch (e) {
                 alert(e)
             }
@@ -105,7 +105,7 @@ export default {
 
                 const createdItem = await Storage.saveListItem(this.user.uid, item)
                 this.showToast('Item saved')
-                this.$router.replace({ name: 'list', params: { id: createdItem.listId } })
+                this.$router.replace({ name: this.$Const.routes.list, params: { id: createdItem.listId } })
             } catch (e) {
                 alert(e)
             }

@@ -37,6 +37,8 @@ export default {
         if (object.id) {
             return idb.updateObject(table, objectToSave)
         }
+
+        delete object.id
         return idb.addObject(table, objectToSave)
     },
 

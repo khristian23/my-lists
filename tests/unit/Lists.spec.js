@@ -1,9 +1,9 @@
-import ListManager from '@/views/ListManager.vue'
+import Lists from '@/views/Lists.vue'
 import { mount } from '@vue/test-utils'
 
-describe('List Manager', function () {
+describe('List Maintain', function () {
     it('should mount a vue component', function () {
-        const wrapper = mount(ListManager)
+        const wrapper = mount(Lists)
         console.log(wrapper)
     })
 })

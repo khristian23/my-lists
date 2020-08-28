@@ -2,7 +2,7 @@
     <div class="formItem">
         <ui5-label :id="name + 'Label'" :for="name + 'Input'" :required="isRequired" show-colon>{{label}}</ui5-label>
         <ui5-input :id="name + 'Input'" :aria-required="isRequired" :aria-labelledby="name + 'Label'" :placeholder="placeholder"
-            :value="value" @input="onInput" :required="isRequired" ref="input">
+            :value="value" @input="onInput" :required="isRequired" ref="input" :class="name">
             <div slot="valueStateMessage">{{stateMessage}}</div>
         </ui5-input>
     </div>

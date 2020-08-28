@@ -101,12 +101,17 @@ export default {
     async addObject (table, object) {
         const db = await this.getDb()
 
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             const trans = db.transaction([table], 'readwrite')
             const store = trans.objectStore(table)
-            store.add(object).onsuccess = r => {
+            const request = store.add(object)
+            request.onsuccess = r => {
                 object.id = r.target.result
                 resolve(object)
+            }
+            request.onerror = r => {
+                console.error(r)
+                reject(object)
             }
         })
     },

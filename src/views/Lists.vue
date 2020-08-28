@@ -2,7 +2,7 @@
     <div class="page">
         <PageHeader :title="title" :user="user" />
         <section class="page-content">
-            <TheList :items="lists" iconAction="edit"
+            <TheList :items="lists" iconAction="edit" class="lists"
                 @itemPress="onListPress" @itemAction="onListEdit" @itemDelete="onListDelete"
                 @orderUpdated="onOrderUpdated" />
             <Confirmation ref="confirmation" />
@@ -30,7 +30,7 @@ import PageHeader from '@/components/TheHeader'
 import PageFooter from '@/components/TheFooter'
 
 export default {
-    name: 'ListManager',
+    name: 'lists',
     props: ['user'],
     components: {
         TheList,
@@ -73,10 +73,10 @@ export default {
             }
         },
         onListEdit (listId) {
-            this.$router.push({ name: 'editList', params: { id: listId } })
+            this.$router.push({ name: this.$Const.routes.list, params: { id: listId } })
         },
         onCreate () {
-            this.$router.push({ name: 'editList', params: { id: 'new' } })
+            this.$router.push({ name: this.$Const.routes.list, params: { id: 'new' } })
         },
         onOrderUpdated (lists) {
             try {

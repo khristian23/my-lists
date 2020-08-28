@@ -75,7 +75,7 @@ export default {
                             displayName: this.name
                         }).then(() => {
                             this.$refs.form.showToast('User registered')
-                            this.$router.replace({ name: 'list-manager' })
+                            this.$router.replace({ name: this.$Const.routes.lists })
                         })
                     }, error => {
                         this.error = error.message

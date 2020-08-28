@@ -44,7 +44,7 @@ export default {
                     this.itemId = parseInt(this.$route.params.id)
                     this.item = await Storage.getListItem(this.user.uid, this.listId, this.itemId)
                     if (!this.item) {
-                        this.$router.replace({ name: 'list', params: { id: this.listId } })
+                        this.$router.replace({ name: this.$Const.routes.list, params: { id: this.listId } })
                     } else {
                         this.fields.forEach(d => {
                             this[d] = this.item[d]

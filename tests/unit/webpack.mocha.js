@@ -10,8 +10,9 @@ module.exports = merge([
       tests: path.join(__dirname, "test"),
     },
   }),
-  { entry: './test/index.js' },
+  { entry: './tests/unit/index.js' },
   parts.resolve(),
   parts.output(),
-  parts.module()
+  parts.module(),
+  parts.plugins()
 ]);

@@ -22,7 +22,7 @@ module.exports = (on, config) => {
       }
     },
     watchOptions: {}
-  } 
+  }
   on('file:preprocessor', webpack(options))
 
   return Object.assign({}, config, {

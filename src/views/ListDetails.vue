@@ -53,7 +53,7 @@ export default {
                 if (this.list) {
                     this.loadListItems()
                 } else {
-                    this.$router.replace({ name: 'list-manager' })
+                    this.$router.replace({ name: this.$Const.routes.lists })
                 }
             }
         }
