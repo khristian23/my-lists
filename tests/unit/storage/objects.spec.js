@@ -1,4 +1,4 @@
-var assert = require('assert')
+const assert = require('assert')
 
 import List from '@/storage/List'
 import ListItem from '@/storage/ListItem'

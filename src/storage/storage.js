@@ -3,7 +3,7 @@ import localStorage from './localStorage/storage-local'
 
 let storage = indexedDB
 
-if (window.Cypress) {
+if (window.Cypress || window.it) {
     storage = localStorage
 }
 

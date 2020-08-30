@@ -25,6 +25,14 @@ class List extends ListObject {
         this._id = id
     }
 
+    get name () {
+        return this._name
+    }
+
+    set name (name) {
+        this._name = name
+    }
+
     set listItems (listItems) {
         this._listItems = listItems
     }
