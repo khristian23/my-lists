@@ -22,6 +22,14 @@ class ListItem extends ListObject {
         this._id = id
     }
 
+    get listId () {
+        return this._listId
+    }
+
+    set listId (listId) {
+        this._listId = listId
+    }
+
     get name () {
         return this._name
     }

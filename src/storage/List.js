@@ -90,6 +90,7 @@ class List extends ListObject {
     }
 
     addListItem (listItem) {
+        listItem.listId = this._id
         this._listItems.push(listItem)
     }
 

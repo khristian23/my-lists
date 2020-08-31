@@ -18,55 +18,80 @@ export default {
         localStorage.setItem(KEY, JSON.stringify(data))
     },
 
+    _getListPosition (lists, listId) {
+        let i = 0
+        for (; i < lists.length; i++) {
+            if (lists[i].id === listId) {
+                break
+            }
+        }
+        return i;
+    },
+
+    _saveUserListsReplacingList (userId, listId, list) {
+        const userLists = this._getRawLists(userId)
+        const listPosition = this._getListPosition(userLists, listId)
+        if (list) {
+            const listData = list.toObject()
+            listData.listItems = list.listItems.map(item => item.toObject())
+            userLists.splice(listPosition, 1, listData)
+        } else {
+            userLists.splice(listPosition, 1)
+        }
+        
+        return this.saveLists(userId, userLists)
+    },
+
+    _convertListDataToListObject (dataLists) {
+        return (dataLists || []).map(dataList => {
+            const list = new List(dataList)
+            list.listItems = dataList.listItems.map(item => new ListItem(item))
+            return list
+        })
+    },
+
     async getAllLists () {
         const users = this._getDataFromStorage()
         let lists = []
         Object.keys(users).forEach(userId => {
-            lists = lists.concat(users[userId])
+            lists = lists.concat(this._convertListDataToListObject(users[userId]))
         })
-        return Promise.resolve(lists)
+        return lists
+    },
+
+    _getRawLists (userId) {
+        const users = this._getDataFromStorage()
+        return users[userId] || []
     },
 
     getLists (userId) {
-        const users = this._getDataFromStorage()
-        return Promise.resolve(users[userId] || [])
+        return this._convertListDataToListObject(this._getRawLists(userId))
     },
 
-    async getList (userId, listId) {
-        if (!userId) {
-            return Promise.reject()
-        }
-
-        const userLists = await this.getLists(userId)
+    getList (userId, listId) {
+        const userLists = this.getLists(userId)
         const listData = userLists.filter(list => list.id === listId)[0]
         if (!listData) {
-            return Promise.resolve(null)
+            return null
         }
-        return Promise.resolve(new List(listData))
+        return new List(listData)
     },
 
-    async saveList (userId, list) {
-        if (!list) {
-           return Promise.reject()
+    saveList (userId, list) {
+        if (!list.id) {
+            list.id = Math.floor(Math.random() * 1000)
         }
 
-        const userLists = await this.getLists(userId)
-        let i = 0
-        for (; i < userLists.length; i++) {
-            if (userLists[i].id === list.id) {
-                break
-            }
-        }
-        userLists.splice(i, 1, list.toObject())
-
-        this.saveLists(userId, userLists)
-
-        return Promise.resolve(true)
+        this._saveUserListsReplacingList(userId, list.id, list)
     },
 
-    async saveLists (userId, lists) {
+    saveLists (userId, lists) {
         const users = this._getDataFromStorage()
         users[userId] = lists
         this._saveDataToStorage(users)
+    },
+
+    deleteList (userId, listId) {
+        return this._saveUserListsReplacingList(userId, listId, undefined)
     }
 }

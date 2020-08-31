@@ -36,7 +36,7 @@ export default {
     async deleteList (userId, listId) {
         return storage.deleteList(userId, listId)
     },
-
+/*
     async getListItems (userId, listId) {
         return storage.getListItems(userId, listId)
     },
@@ -52,5 +52,5 @@ export default {
     async saveListItems (userId, listItems) {
         return storage.saveListItems(userId, listItems)
     }
-
+*/
 }
