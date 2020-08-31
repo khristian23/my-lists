@@ -69,7 +69,7 @@ export default {
             async handler () {
                 if (this.$route.params.id !== 'new') {
                     this.listId = parseInt(this.$route.params.id, 10)
-                    let data = await Storage.getList(this.user.uid, this.listId)
+                    const data = await Storage.getList(this.user.uid, this.listId)
 
                     this.fields.forEach(d => {
                         this[d] = data[d]
@@ -103,7 +103,7 @@ export default {
         onTypeChanged () {
             this.subTypes = this.$Const.lists.types.filter(t => t.id === this.type)[0].subTypes
 
-            let type = this.$Const.lists.types.filter(t => t.id === this.type)[0]
+            const type = this.$Const.lists.types.filter(t => t.id === this.type)[0]
             if (type.subTypes.length) {
                 this.subtype = this.subtype || type.subTypes[0].id
             } else {
@@ -119,7 +119,7 @@ export default {
         },
         onSave () {
             if (this.validate()) {
-                let list = {
+                const list = {
                     id: this.listId,
                     name: this.name,
                     description: this.description,

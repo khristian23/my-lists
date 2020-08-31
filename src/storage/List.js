@@ -94,23 +94,14 @@ class List extends ListObject {
         this._listItems.push(listItem)
     }
 
-    _createObject (keys) {
-        return keys.reduce((object, property) => {
-            if (this.hasOwnProperty('_' + property)) {
-                object[property] = typeof this['_' + property] === 'undefined' ? '' : this['_' + property]
-            }
-            return object
-        }, {})
-    }
-
     toFirebaseObject () {
-        let keys = ['id', 'name', 'description', 'priority', 'type', 'subtype', 'modifiedAt',
+        const keys = ['id', 'name', 'description', 'priority', 'type', 'subtype', 'modifiedAt',
             'itemModifiedAt']
         return this._createObject(keys)
     }
 
     toObject () {
-        let keys = ['id', 'name', 'description', 'priority', 'type', 'subtype', 'modifiedAt',
+        const keys = ['id', 'name', 'description', 'priority', 'type', 'subtype', 'modifiedAt',
             'itemModifiedAt', 'syncStatus', 'firebaseId', 'user']
         return this._createObject(keys)
     }

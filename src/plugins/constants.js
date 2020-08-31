@@ -1,6 +1,6 @@
 import Const from '@/util/constants'
 
-let Constants = {
+const Constants = {
     install (Vue, options) {
         Vue.prototype.$Const = Const
     }

@@ -66,8 +66,8 @@ export default {
             this.$emit('itemPress', event.detail.item.getAttribute('datakey'))
         },
         onItemDelete (event) {
-            let id = event.detail.item.getAttribute('datakey')
-            let item = this.items.filter(item => item.id + '' === id)[0]
+            const id = event.detail.item.getAttribute('datakey')
+            const item = this.items.filter(item => item.id + '' === id)[0]
             this.$emit('itemDelete', item)
         }
     }

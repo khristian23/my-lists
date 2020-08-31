@@ -17,7 +17,7 @@ export default {
     },
 
     async getList (userId, listId) {
-        let list = await idb.getObjectsBy('list', { id: listId })
+        const list = await idb.getObjectsBy('list', { id: listId })
         if (!list || list.userId !== userId) {
             return null
         }
@@ -33,7 +33,7 @@ export default {
     async saveObject (table, userId, object) {
         this.setModificationStatus(userId, object)
 
-        let objectToSave = this.getObject(object)
+        const objectToSave = this.getObject(object)
         if (object.id) {
             return idb.updateObject(table, objectToSave)
         }
@@ -47,9 +47,9 @@ export default {
     },
 
     async deleteList (userId, listId) {
-        let list = await this.getList(userId, listId)
+        const list = await this.getList(userId, listId)
         if (!list) {
-            let error = 'List not found'
+            const error = 'List not found'
             throw error
         }
         await idb.deleteObjectsBy('item', { listId: listId })
@@ -61,7 +61,7 @@ export default {
     },
 
     async getListItem (userId, listId, itemId) {
-        let item = await idb.getObjectsBy('item', { id: itemId })
+        const item = await idb.getObjectsBy('item', { id: itemId })
         if (!item || item.userId !== userId || item.listId !== listId) {
             return null
         }

@@ -17,7 +17,6 @@ export default {
     },
 
     async getLists (userId) {
-        debugger
         return storage.getLists(userId)
     },
 
@@ -35,7 +34,7 @@ export default {
 
     async deleteList (userId, listId) {
         return storage.deleteList(userId, listId)
-    },
+    }
 /*
     async getListItems (userId, listId) {
         return storage.getListItems(userId, listId)

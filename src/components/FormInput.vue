@@ -11,7 +11,7 @@
 <script>
 import '@ui5/webcomponents/dist/Input'
 import '@ui5/webcomponents/dist/Label'
-import {formItem} from '@/mixins/formItem'
+import { formItem } from '@/mixins/formItem'
 
 export default {
     name: 'form-input',
@@ -23,7 +23,7 @@ export default {
     },
     methods: {
         validate () {
-            let input = this.$refs.input
+            const input = this.$refs.input
             if (input.required && input.value === '') {
                 input.valueState = 'Error'
                 this.stateMessage = this.label + ' is required'

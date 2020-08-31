@@ -5,7 +5,7 @@ import App from './App'
 import router from './router'
 import '@ui5/webcomponents-fiori/dist/Assets'
 import '@/storage/storage'
-import {strings} from './mixins/strings'
+import { strings } from './mixins/strings'
 import Constants from './plugins/constants'
 
 Vue.config.productionTip = false

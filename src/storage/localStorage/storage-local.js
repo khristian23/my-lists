@@ -25,7 +25,7 @@ export default {
                 break
             }
         }
-        return i;
+        return i
     },
 
     _saveUserListsReplacingList (userId, listId, list) {
@@ -38,7 +38,7 @@ export default {
         } else {
             userLists.splice(listPosition, 1)
         }
-        
+
         return this.saveLists(userId, userLists)
     },
 

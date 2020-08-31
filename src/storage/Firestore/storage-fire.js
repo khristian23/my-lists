@@ -10,13 +10,11 @@ export default {
     },
 
     async getLists (userId) {
-        // let userDocument = await this._getUserDocument(userId)
-        // let listsCollection = userDocument.collection('lists')
         return new Promise(resolve => {
             firestore.collection('users').doc(userId)
                 .collection('lists')
                 .onSnapshot(snapshots => {
-                    let lists = snapshots.docs.map(doc => {
+                    const lists = snapshots.docs.map(doc => {
                         return {
                             id: doc.id,
                             name: doc.data().name,

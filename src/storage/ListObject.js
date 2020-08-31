@@ -1,7 +1,7 @@
 class ListObject {
     _createObject (keys) {
         return keys.reduce((object, property) => {
-            if (this.hasOwnProperty('_' + property)) {
+            if (ListObject.prototype.hasOwnProperty.call(this, '_' + property)) {
                 object[property] = typeof this['_' + property] === 'undefined' ? '' : this['_' + property]
             }
             return object

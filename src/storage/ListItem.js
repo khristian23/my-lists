@@ -62,17 +62,21 @@ class ListItem extends ListObject {
         return this._modifiedAt
     }
 
+    get userId () {
+        return this._userId
+    }
+
     set userId (userId) {
         this._userId = userId
     }
 
     toFirebaseObject () {
-        let keys = ['id', 'name', 'priority', 'modifiedAt', 'status']
+        const keys = ['id', 'name', 'priority', 'modifiedAt', 'status']
         return this._createObject(keys)
     }
 
     toObject () {
-        let keys = ['id', 'name', 'priority', 'modifiedAt', 'status',
+        const keys = ['id', 'name', 'priority', 'modifiedAt', 'status',
             'syncStatus', 'firebaseId', 'user']
         return this._createObject(keys)
     }

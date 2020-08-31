@@ -98,7 +98,7 @@ export default {
             this.items = await Storage.getListItems(this.user.uid, this.listId)
         },
         onQuickCreate () {
-            let listItem = {
+            const listItem = {
                 name: this.$refs.quick.value,
                 status: 'Pending',
                 listId: this.listId
@@ -114,14 +114,14 @@ export default {
             this.$router.push({ name: 'item', params: { list: this.listId, id: itemId } })
         },
         onItemDone (itemId) {
-            let listItem = {
+            const listItem = {
                 id: itemId,
                 status: 'Done'
             }
             this.saveListItem(listItem)
         },
         onItemUndone (itemId) {
-            let listItem = {
+            const listItem = {
                 id: itemId,
                 status: 'Pending'
             }
@@ -139,7 +139,7 @@ export default {
             }
         },
         async flagListAsChanged () {
-            let list = await Storage.getList(this.user.uid, this.listId)
+            const list = await Storage.getList(this.user.uid, this.listId)
             list.syncStatus = this.$Const.status.changed
             await Storage.saveList(this.user.uid, list)
         },

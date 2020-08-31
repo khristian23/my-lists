@@ -11,7 +11,7 @@
 <script>
 import '@ui5/webcomponents/dist/Select'
 import '@ui5/webcomponents/dist/Label'
-import {formItem} from '@/mixins/formItem'
+import { formItem } from '@/mixins/formItem'
 
 export default {
     name: 'form-select',

@@ -75,7 +75,7 @@ export default {
         },
         onSave () {
             if (this.validate()) {
-                let listItem = {
+                const listItem = {
                     id: this.itemId,
                     listId: this.listId,
                     name: this.name,
