@@ -73,25 +73,20 @@ describe('Local Storage', () => {
             assertUserListCount(userId, 0)
         })
 
-        it('should add a list', async () => {
+        it ('should add a list', async () => {
             createListWithIdAndAssertAllListsCount(userId, 100, 1)
         })
         
-        it('should retrieve the created list', async () => {
+        it ('should retrieve the created list', async () => {
             assertListProperties(userId, 100, 'List100')
         })
 
-        it('should create a second list', async () => {
+        it ('should create a second list', async () => {
             createListWithIdAndAssertAllListsCount(userId, 200, 2)
         })
 
-        it('should retrieve the second created list', async () => {
+        it ('should retrieve the second created list', async () => {
             assertListProperties(userId, 200, 'List200')
-        })
-
-        it('should not retrieve a non existent list', async () => {
-            const list = await storage.getList(userId, 300)
-            assert.ok(!list)
         })
 
         it ('should update an existent list', async () => {
@@ -108,6 +103,14 @@ describe('Local Storage', () => {
         it ('should delete a list', async () => {
             await storage.deleteList(userId, 100)
             assertUserListCount(userId, 1)
+        })
+
+        it ('should throw an error if saving other than List', () => {
+            assert.throws(() => { storage.saveList({}) }, /^Error: Wrong list object type$/)
+        })
+
+        it ('should throw exception if list is not found', () => {
+            assert.throws(() => { storage.getList('uid', 123) }, /^Error: List id:123 not found$/)
         })
     })
 

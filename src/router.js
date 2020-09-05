@@ -15,7 +15,7 @@ export default new Router({
     }, {
         path: '/list/:id/items',
         name: Consts.routes.listItems,
-        component: () => import(/* webpackChunkName: "ListDetails" */ '@/views/ListDetails')
+        component: () => import(/* webpackChunkName: "ListDetails" */ '@/views/ListItems')
     }, {
         path: '/list/:list/item/:id',
         name: Consts.routes.listItem,
@@ -23,7 +23,7 @@ export default new Router({
     }, {
         path: '/list/:id',
         name: Consts.routes.list,
-        component: () => import(/* webpackChunkName: "EditList" */ '@/views/EditList')
+        component: () => import(/* webpackChunkName: "EditList" */ '@/views/List')
     }, {
         path: '/login',
         name: Consts.routes.login,

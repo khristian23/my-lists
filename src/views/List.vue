@@ -33,6 +33,7 @@
 
 <script>
 import Storage from '@/storage/storage'
+import List from '@/storage/List'
 import PageHeader from '@/components/TheHeader'
 import SimpleForm from '@/components/TheForm'
 import PageFooter from '@/components/TheFooter'
@@ -69,10 +70,10 @@ export default {
             async handler () {
                 if (this.$route.params.id !== 'new') {
                     this.listId = parseInt(this.$route.params.id, 10)
-                    const data = await Storage.getList(this.user.uid, this.listId)
+                    const list = await Storage.getList(this.user.uid, this.listId)
 
-                    this.fields.forEach(d => {
-                        this[d] = data[d]
+                    this.fields.forEach(field => {
+                        this[field] = list[field]
                     })
                 } else {
                     this.type = this.$Const.lists.types[0].id
@@ -119,13 +120,13 @@ export default {
         },
         onSave () {
             if (this.validate()) {
-                const list = {
+                const list = new List({
                     id: this.listId,
                     name: this.name,
                     description: this.description,
                     type: this.type,
                     subtype: this.subtype
-                }
+                })
 
                 this.$emit('saveList', list)
             }

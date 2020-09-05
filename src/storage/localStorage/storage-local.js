@@ -72,12 +72,16 @@ export default {
         const userLists = this.getLists(userId)
         const listData = userLists.filter(list => list.id === listId)[0]
         if (!listData) {
-            return null
+            throw new Error(`List id:${listId} not found`)
         }
         return new List(listData)
     },
 
     saveList (userId, list) {
+        if (!(list instanceof List)) {
+            throw new Error('Wrong list object type')
+        }
+
         if (!list.id) {
             list.id = Math.floor(Math.random() * 1000)
         }
