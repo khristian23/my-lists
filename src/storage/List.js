@@ -33,6 +33,30 @@ class List extends ListObject {
         this._name = name
     }
 
+    get description () {
+        return this._description
+    }
+
+    set description (description) {
+        this._description = description
+    }
+
+    get type () {
+        return this._type
+    }
+
+    set type (type) {
+        this._type = type
+    }
+
+    get subtype () {
+        return this._subtype
+    }
+
+    set subtype (subtype) {
+        this._subtype = subtype
+    }
+
     set listItems (listItems) {
         this._listItems = listItems
     }

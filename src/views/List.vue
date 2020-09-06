@@ -68,6 +68,10 @@ export default {
         '$route.params.id': {
             immediate: true,
             async handler () {
+                if (!this.$route.params.id) {
+                    return
+                }
+
                 if (this.$route.params.id !== 'new') {
                     this.listId = parseInt(this.$route.params.id, 10)
                     const list = await Storage.getList(this.user.uid, this.listId)
