@@ -67,22 +67,14 @@ export default {
     watch: {
         '$route.params.id': {
             immediate: true,
-            async handler () {
-                if (!this.$route.params.id) {
-                    return
-                }
-
-                if (this.$route.params.id !== 'new') {
-                    this.listId = parseInt(this.$route.params.id, 10)
-                    const list = await Storage.getList(this.user.uid, this.listId)
-
-                    this.fields.forEach(field => {
-                        this[field] = list[field]
-                    })
-                } else {
-                    this.type = this.$Const.lists.types[0].id
-                }
-                this.onTypeChanged()
+            handler () {
+                this._initializeList()
+            }
+        },
+        'user': {
+            immediate: true,
+            handler () {
+                this._initializeList()
             }
         }
     },
@@ -101,6 +93,27 @@ export default {
         }
     },
     methods: {
+        async _initializeList () {
+            if (!this.$route.params.id) {
+                return
+            }
+
+            if (this.$route.params.id !== 'new') {
+                this.listId = parseInt(this.$route.params.id, 10)
+                const list = await Storage.getList(this.user.uid, this.listId)
+
+                if (!list) {
+                    throw new Error(`List ${this.listId} does not exist`)
+                }
+
+                this.fields.forEach(field => {
+                    this[field] = list[field]
+                })
+            } else {
+                this.type = this.$Const.lists.types[0].id
+            }
+            this.onTypeChanged()
+        },
         onTypeSelection () {
             this.subtype = null
             this.onTypeChanged()

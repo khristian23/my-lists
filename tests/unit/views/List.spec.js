@@ -23,13 +23,17 @@ const router = new VueRouter({
   routes
 })
 
+const getListStub = sinon.stub(storage, 'getList').returns({
+    name: 'Christian',
+    description: 'List description',
+    type: 'shop',
+    subtype: 'groceries'
+})
+
 describe('List View', () => {
     let wrapper
     beforeEach(() => {
         wrapper = shallowMount(List, {
-            propsData: {
-                user: 'Christian'
-            },
             localVue,
             router
         })
@@ -48,14 +52,8 @@ describe('List View', () => {
     })
 
     it('should be able to populate list values of existent list', async () => {
-        const stub = sinon.stub(storage, 'getList').returns({ 
-            name: 'Christian',
-            description: 'List description',
-            type: 'shop',
-            subtype: 'groceries'
-        })
-
         assert.ok(wrapper.vm.$route instanceof Object)
+        await wrapper.setProps({ user: 'Christian' })
 
         router.push({ name: 'list', params: { id: 200 } })
 
@@ -96,5 +94,14 @@ describe('List View', () => {
         assert.equal(listToSave.description, 'Christian List Description')
         assert.equal(listToSave.type, 'wish')
         assert.equal(listToSave.subtype, null)
+    })
+
+    it('should try to retrieve the right list', async () => {
+        router.push({ name: 'list', params: { id: 300 } })
+
+        await wrapper.setProps({ user: { uid: 'ChristianUser' } })
+        await flushPromises()
+
+        assert.ok(getListStub.lastCall.calledWith('ChristianUser', 300))
     })
 })

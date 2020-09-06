@@ -1,6 +1,3 @@
-import List from '@/storage/List'
-import storage from '@/storage/storage'
-
 describe('Lists Maintain', () => {
     before(() => {
         cy.clearLocalStorageCache();
@@ -41,6 +38,7 @@ describe('Lists Maintain', () => {
                 cy.get('.description').shadow().find('input').type('My test list description')
             })
             cy.get('ui5-button[icon=save]').click()
+            
             const listsViewUrlSuffix = '/#/'
             cy.url().should('eq', Cypress.config().baseUrl + listsViewUrlSuffix)
         })
@@ -51,12 +49,12 @@ describe('Lists Maintain', () => {
     })
 
     describe('Edit existent list', () => {
-        it('should navigate to edit list view', () => {
+        it('should navigate to edit list view by pressing on list edit button', () => {
             cy.get('ui5-button[icon=edit]').click()
             cy.url().should('match', /list\/\d+$/)
         })
 
-        it('should navigate back to the lists view', () => {
+        it('should navigate back to the lists view by pressing header back button', () => {
             cy.get('ui5-button[icon=nav-back]').click()
 
             const listsViewUrlSuffix = '/#/'
@@ -65,13 +63,16 @@ describe('Lists Maintain', () => {
             cy.get('.lists').find('.li-custom').should('have.length', 1)
         })
 
-        it ('should edit list name', () => {
+        it ('should navigate to existent list, edit name and save', () => {
             cy.get('ui5-button[icon=edit]').first().click()
             cy.get('.page-content').within(($form) => {
                 cy.get('.name').shadow().find('input').type('New list name')
             })
 
             cy.get('ui5-button[icon=save]').click()
+
+            const listsViewUrlSuffix = '/#/'
+            cy.url().should('eq', Cypress.config().baseUrl + listsViewUrlSuffix)
             cy.get('.li-custom').first().find('.li-title').contains('New list name')
         })
     })
