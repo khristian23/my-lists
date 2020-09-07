@@ -94,7 +94,7 @@ export default {
     },
     methods: {
         async _initializeList () {
-            if (!this.$route.params.id) {
+            if (!this.$route.params.id || !this.user) {
                 return
             }
 

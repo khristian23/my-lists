@@ -41,6 +41,7 @@ describe('List View', () => {
 
     it('should populate an initial set of values on new Lists', async () => {
         router.push({ name: 'list', params: { id: 'new' } })
+        await wrapper.setProps({ user: { uid: 'Christian'} })
 
         await flushPromises()
         assert.equal(wrapper.vm.listId, null)
@@ -53,7 +54,7 @@ describe('List View', () => {
 
     it('should be able to populate list values of existent list', async () => {
         assert.ok(wrapper.vm.$route instanceof Object)
-        await wrapper.setProps({ user: 'Christian' })
+        await wrapper.setProps({ user: { uid: 'Christian'} })
 
         router.push({ name: 'list', params: { id: 200 } })
 
