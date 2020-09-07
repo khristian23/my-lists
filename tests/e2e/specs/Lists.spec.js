@@ -44,13 +44,27 @@ describe('Lists Maintain', () => {
         })
 
         it('should see one list', () => {
-            cy.get('.lists').find('.li-custom').should('have.length', 1)
+            cy.get('.li-custom').should('have.length', 1)
+        })
+    })
+
+    describe('Create a second List', () => {
+        it('should create second List', () => {
+            cy.get('ui5-button[icon=add]').click()
+        
+            cy.get('.page-content').within(($form) => {
+                cy.get('.name').shadow().find('input').type('My second list name')
+                cy.get('.description').shadow().find('input').type('My second list description')
+            })
+            cy.get('ui5-button[icon=save]').click()
+        
+            cy.get('.li-custom').should('have.length', 2)
         })
     })
 
     describe('Edit existent list', () => {
         it('should navigate to edit list view by pressing on list edit button', () => {
-            cy.get('ui5-button[icon=edit]').click()
+            cy.get('ui5-button[icon=edit]').first().click()
             cy.url().should('match', /list\/\d+$/)
         })
 
@@ -60,10 +74,10 @@ describe('Lists Maintain', () => {
             const listsViewUrlSuffix = '/#/'
             cy.url().should('eq', Cypress.config().baseUrl + listsViewUrlSuffix)
 
-            cy.get('.lists').find('.li-custom').should('have.length', 1)
+            cy.get('.li-custom').should('have.length', 2)
         })
 
-        it ('should navigate to existent list, edit name and save', () => {
+        it('should navigate to existent list, edit name and save', () => {
             cy.get('ui5-button[icon=edit]').first().click()
             cy.get('.page-content').within(($form) => {
                 cy.get('.name').shadow().find('input').type('New list name')
@@ -74,6 +88,16 @@ describe('Lists Maintain', () => {
             const listsViewUrlSuffix = '/#/'
             cy.url().should('eq', Cypress.config().baseUrl + listsViewUrlSuffix)
             cy.get('.li-custom').first().find('.li-title').contains('New list name')
+        })
+    })
+
+    describe('Delete list', () => {
+        it('should delete a list by pressing on the delete button', () => {
+            cy.get('.li-custom').first().shadow().find('ui5-button[icon=decline]').click()
+            cy.get('ui5-dialog').within(() => {
+                cy.get('ui5-button[design=Emphasized]').click()
+            })
+            cy.get('.li-custom').should('have.length', 1)
         })
     })
 })
