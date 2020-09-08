@@ -60,7 +60,7 @@ export default {
             this.lists = unsortedlists.sort((a, b) => a.name.localeCompare(b.name))
         },
         onListPress (listId) {
-            this.$router.push({ name: 'list', params: { id: listId } })
+            this.$router.push({ name: this.$Const.routes.listItems, params: { id: listId } })
         },
         async onListDelete (list) {
             var index = this.lists.indexOf(list)

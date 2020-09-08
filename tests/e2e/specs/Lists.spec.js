@@ -100,4 +100,11 @@ describe('Lists Maintain', () => {
             cy.get('.li-custom').should('have.length', 1)
         })
     })
+
+    describe('Open List Items', () => {
+        it('should navigation to list items when pressing on list', () => {
+            cy.get('.li-custom').first().find('.li-title-wrapper').click()
+            cy.url().should('match', /list\/\d+\/items$/)
+        })
+    })
 })
