@@ -79,7 +79,7 @@ export default {
                     id: this.itemId,
                     listId: this.listId,
                     name: this.name,
-                    syncStatus: this.$Const.status.changed
+                    syncStatus: this.$Const.changeStatus.changed
                 }
 
                 this.$emit('saveItem', listItem)

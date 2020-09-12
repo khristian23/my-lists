@@ -32,9 +32,14 @@ export default {
             subTypes: []
         }]
     },
-    status: {
+    itemStatus: {
+        done: 'Done',
+        pending: 'Pending'
+    },
+    changeStatus: {
         none: '',
-        changed: 'M',
+        new: 'N',
+        changed: 'C',
         deleted: 'D'
     },
     routes: {

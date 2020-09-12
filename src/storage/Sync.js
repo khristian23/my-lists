@@ -97,7 +97,7 @@ export default {
             if (!onlyItems) {
                 firebaseListId = await FirebaseStorage.saveList(userId, localList)
                 localList.firebaseId = firebaseListId
-                localList.syncStatus = Const.status.none
+                localList.syncStatus = Const.changeStatus.none
                 await LocalStorage.saveList(userId, localList)
             } else {
                 firebaseListId = localList.firebaseId
@@ -105,7 +105,7 @@ export default {
 
             return Promise.all(localList.listItems.map(async localItem => {
                 localItem.firebaseId = await FirebaseStorage.saveListItem(userId, firebaseListId, localItem)
-                localItem.syncStatus = Const.status.none
+                localItem.syncStatus = Const.changeStatus.none
                 return LocalStorage.saveListItem(userId, localItem)
             }))
         })

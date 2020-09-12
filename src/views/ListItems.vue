@@ -1,6 +1,6 @@
 <template>
     <div class="page">
-        <PageHeader :title="list.name" backButton="true" :user="user" />
+        <PageHeader :title="title" backButton="true" :user="user" />
         <section class="page-content">
             <h4 v-if="noItems">No data found</h4>
             <TheList header="Pending" :items="pendingItems" iconAction="accept" v-if="hasPendingItems"
@@ -20,6 +20,7 @@
 
 <script>
 import Storage from '@/storage/storage'
+import ListItem from '@/storage/ListItem'
 import '@ui5/webcomponents/dist/Input'
 
 import TheList from '@/components/TheList'
@@ -28,6 +29,8 @@ import PageFooter from '@/components/TheFooter'
 
 import '@ui5/webcomponents-icons/dist/icons/accept'
 import '@ui5/webcomponents-icons/dist/icons/repost'
+
+const ENTER_KEY = 13
 
 export default {
     name: 'list-details',
@@ -39,29 +42,33 @@ export default {
     },
     data () {
         return {
-            listId: parseInt(this.$route.params.id, 10),
+            listId: null,
             list: {},
             items: [],
             showCreateButton: true
         }
     },
     watch: {
-        listId: {
+        '$route.params.id': {
             immediate: true,
-            async handler () {
-                this.list = await Storage.getList(this.user.uid, this.listId)
-                if (this.list) {
-                    this.loadListItems()
-                } else {
-                    this.$router.replace({ name: this.$Const.routes.lists })
-                }
+            handler () {
+                this._intializeListItems()
+            }
+        },
+        user: {
+            immediate: true,
+            handler () {
+                this._intializeListItems()
             }
         }
     },
     mounted () {
-        this.hookListeners()
+        this.hookQuickCreateListeners()
     },
     computed: {
+        title () {
+            return this.list.name || 'List not found'
+        },
         noItems () {
             return !(this.hasPendingItems || this.hasDoneItems)
         },
@@ -72,14 +79,27 @@ export default {
             return !!this.doneItems.length
         },
         pendingItems () {
-            return this.items.filter(item => item.status === 'Pending')
+            return this.items.filter(item => item.status === this.$Const.itemStatus.pending &&
+                item.syncStatus !== this.$Const.changeStatus.deleted)
         },
         doneItems () {
-            return this.items.filter(item => item.status === 'Done')
+            return this.items.filter(item => item.status === this.$Const.itemStatus.done &&
+                item.syncStatus !== this.$Const.changeStatus.deleted)
         }
     },
     methods: {
-        hookListeners () {
+        async _intializeListItems () {
+            this.listId = parseInt(this.$route.params.id, 10)
+            if (Number.isNaN(this.listId) || !this.user) {
+                return
+            }
+
+            this.list = await Storage.getList(this.user.uid, this.listId)
+            if (this.list) {
+                this.items = this.list.listItems || []
+            }
+        },
+        hookQuickCreateListeners () {
             this.$refs.quick.addEventListener('focus', () => {
                 this.showCreateButton = false
             })
@@ -88,66 +108,75 @@ export default {
                 this.showCreateButton = true
             })
             this.$refs.quick.addEventListener('keyup', event => {
-                if (event.keyCode === 13) {
+                if (event.keyCode === ENTER_KEY) {
                     event.preventDefault()
-                    this.onQuickCreate()
+                    this.onTriggerQuickCreate(this.$refs.quick.value)
+                    this.$refs.quick.value = ''
+                    this.$refs.quick.focus()
                 }
             })
         },
-        async loadListItems () {
-            this.items = await Storage.getListItems(this.user.uid, this.listId)
-        },
-        onQuickCreate () {
-            const listItem = {
-                name: this.$refs.quick.value,
-                status: 'Pending',
-                listId: this.listId
-            }
-            this.$refs.quick.value = ''
-            this.$refs.quick.focus()
-            this.saveListItem(listItem)
+        onTriggerQuickCreate (name) {
+            const listItem = new ListItem({
+                name: name,
+                status: this.$Const.itemStatus.pending,
+                listId: this.listId,
+                syncStatus: this.$Const.changeStatus.new,
+                modifiedAt: new Date().getTime()
+            })
+            this.items.push(listItem)
+            this._saveList()
         },
         onCreate () {
-            this.$router.push({ name: 'item', params: { list: this.listId, id: 'new' } })
+            this.$router.push({ name: this.$Const.routes.listItem, params: { list: this.listId, id: 'new' } })
         },
         onItemPress (itemId) {
-            this.$router.push({ name: 'item', params: { list: this.listId, id: itemId } })
+            this.$router.push({ name: this.$Const.routes.listItem, params: { list: this.listId, id: itemId } })
+        },
+        _getListItemById (itemId) {
+            return this.items.filter(items => items.id === itemId)[0]
         },
         onItemDone (itemId) {
-            const listItem = {
-                id: itemId,
-                status: 'Done'
-            }
-            this.saveListItem(listItem)
+            const changedItem = this._getListItemById(itemId)
+            changedItem.status = this.$Const.itemStatus.done
+            changedItem.syncStatus = this.$Const.changeStatus.changed
+            this._saveList()
         },
         onItemUndone (itemId) {
-            const listItem = {
-                id: itemId,
-                status: 'Pending'
-            }
-            this.saveListItem(listItem)
+            const changedItem = this._getListItemById(itemId)
+            changedItem.status = this.$Const.itemStatus.pending
+            changedItem.syncStatus = this.$Const.changeStatus.changed
+            this._saveList()
         },
-        onItemDelete () {
-
+        onItemDelete (itemId) {
+            const changedItem = this._getListItemById(itemId)
+            changedItem.syncStatus = this.$Const.changeStatus.deleted
+            this._saveList()
         },
         onOrderUpdated (listItems) {
-            try {
-                Storage.saveListItems(this.user.uid, listItems)
-                this.flagListAsChanged()
-            } catch (e) {
-                alert(e)
-            }
+            this.items = listItems
+            this.items.forEach(item => {
+                item.syncStatus = this.$Const.changeStatus.changed
+            })
+            this._saveList()
         },
-        async flagListAsChanged () {
-            const list = await Storage.getList(this.user.uid, this.listId)
-            list.syncStatus = this.$Const.status.changed
-            await Storage.saveList(this.user.uid, list)
+        _collectListItems () {
+            this.list.listItems = this.items
+        },
+        _flagListAsChanged () {
+            this.list.syncStatus = this.$Const.changeStatus.changed
+            this.list.itemModifiedAt = new Date().getTime()
         },
         async saveListItem (listItem) {
             await this.flagListAsChanged()
-            listItem.syncStatus = this.$Const.status.changed
+            listItem.syncStatus = this.$Const.changeStatus.changed
             await Storage.saveListItem(this.user.uid, listItem)
             this.loadListItems()
+        },
+        async _saveList () {
+            this._collectListItems()
+            this._flagListAsChanged()
+            await Storage.saveList(this.list)
         }
     }
 }

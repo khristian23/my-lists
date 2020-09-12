@@ -23,15 +23,23 @@ const router = new VueRouter({
   routes
 })
 
-const getListStub = sinon.stub(storage, 'getList').returns({
-    name: 'Christian',
-    description: 'List description',
-    type: 'shop',
-    subtype: 'groceries'
-})
-
 describe('List View', () => {
     let wrapper
+    let getListStub
+
+    before(() => {
+        getListStub = sinon.stub(storage, 'getList').returns({
+            name: 'Christian',
+            description: 'List description',
+            type: 'shop',
+            subtype: 'groceries'
+        })
+    })
+
+    after(() => {
+        getListStub.restore()
+    })
+
     beforeEach(() => {
         wrapper = shallowMount(List, {
             localVue,

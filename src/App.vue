@@ -100,7 +100,7 @@ export default {
         async onSaveItem (item) {
             try {
                 const list = await Storage.getList(this.user.uid, item.listId)
-                list.syncStatus = this.$Const.status.changed
+                list.syncStatus = this.$Const.changeStatus.changed
                 await Storage.saveList(this.user.uid, list)
 
                 const createdItem = await Storage.saveListItem(this.user.uid, item)

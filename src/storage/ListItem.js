@@ -50,12 +50,33 @@ class ListItem extends ListObject {
         return this._localId
     }
 
+    set priority (priority) {
+        this._priority = priority
+    }
+
+    get priority () {
+        return this._priority
+    }
+
+    set status (status) {
+        this._status = status
+    }
+
+    get status () {
+        return this._status
+    }
+
     set syncStatus (syncStatus) {
         this._syncStatus = syncStatus
+        this._modifiedAt = new Date().getTime()
     }
 
     get syncStatus () {
         return this._syncStatus
+    }
+
+    set modifiedAt (modifiedAt) {
+        this._modifiedAt = modifiedAt
     }
 
     get modifiedAt () {

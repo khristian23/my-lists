@@ -89,6 +89,10 @@ class List extends ListObject {
         return this._syncStatus
     }
 
+    set modifiedAt (modifiedAt) {
+        this._modifiedAt = modifiedAt
+    }
+
     get modifiedAt () {
         return this._modifiedAt
     }

@@ -25,7 +25,7 @@ export default {
     },
 
     setModificationStatus (userId, object) {
-        object.syncStatus = Constants.status.changed
+        object.syncStatus = Constants.changeStatus.changed
         object.modifiedAt = new Date().getTime()
         object.userId = userId
     },

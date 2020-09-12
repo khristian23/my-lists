@@ -3,7 +3,7 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import "@ui5/webcomponents-fiori/dist/Assets.js"
+import '@ui5/webcomponents-fiori/dist/Assets.js'
 import '@/storage/storage'
 import { strings } from './mixins/strings'
 import Constants from './plugins/constants'

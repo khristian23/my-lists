@@ -71,7 +71,7 @@ export default {
                 this._initializeList()
             }
         },
-        'user': {
+        user: {
             immediate: true,
             handler () {
                 this._initializeList()
