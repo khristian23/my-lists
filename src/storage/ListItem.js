@@ -11,7 +11,7 @@ class ListItem extends ListObject {
         this._status = data.status
         this._syncStatus = data.syncStatus
         this._firebaseId = data.firebaseId
-        this._user = data.user
+        this._userId = data.userId
     }
 
     get id () {
@@ -98,8 +98,12 @@ class ListItem extends ListObject {
 
     toObject () {
         const keys = ['id', 'name', 'priority', 'modifiedAt', 'status',
-            'syncStatus', 'firebaseId', 'user']
+            'syncStatus', 'firebaseId', 'userId']
         return this._createObject(keys)
+    }
+
+    clone () {
+        return new ListItem(this.toObject())
     }
 }
 

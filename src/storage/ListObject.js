@@ -7,6 +7,10 @@ class ListObject {
             return object
         }, {})
     }
+
+    clone () {
+        throw Error('Implement Clone method')
+    }
 }
 
 export default ListObject

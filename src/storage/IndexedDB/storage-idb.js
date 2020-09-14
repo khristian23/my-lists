@@ -1,5 +1,4 @@
 import idb from './indexed-db'
-import Constants from '@/util/constants'
 import List from '@/storage/List'
 import ListItem from '@/storage/ListItem'
 
@@ -12,77 +11,81 @@ export default {
         return object
     },
 
+    async getAllLists () {
+        return idb.getObjectsBy('list')
+    },
+
     async getLists (userId) {
-        return idb.getObjectsBy('list', { userId: userId })
+        const lists = await idb.getObjectsBy('list', { userId: userId }) || []
+        return lists.map(list => new List(list))
     },
 
     async getList (userId, listId) {
         const list = await idb.getObjectsBy('list', { id: listId })
+
         if (!list || list.userId !== userId) {
-            return null
-        }
-        return list
-    },
-
-    setModificationStatus (userId, object) {
-        object.syncStatus = Constants.changeStatus.changed
-        object.modifiedAt = new Date().getTime()
-        object.userId = userId
-    },
-
-    async saveObject (table, userId, object) {
-        this.setModificationStatus(userId, object)
-
-        const objectToSave = this.getObject(object)
-        if (object.id) {
-            return idb.updateObject(table, objectToSave)
+            throw Error(`List ID:${listId} not found for user ${userId}`)
         }
 
-        delete object.id
-        return idb.addObject(table, objectToSave)
+        const listInstance = new List(list)
+
+        listInstance.listItems = await this._getListItems(userId, listId)
+        return listInstance
+    },
+
+    async _getListItems (userId, listId) {
+        const items = await idb.getObjectsBy('item', { listId: listId }) || []
+        return items.map(item => new ListItem(item))
+    },
+
+    async saveObject (table, userId, listObject) {
+        listObject.userId = userId
+
+        const objectLiteralToSave = this.getObject(listObject)
+        if (listObject.id) {
+            await idb.updateObject(table, objectLiteralToSave)
+        } else {
+            delete objectLiteralToSave.id
+            const generatedId = await idb.addObject(table, objectLiteralToSave)
+            listObject.id = generatedId
+        }
     },
 
     async saveList (userId, list) {
-        return this.saveObject('list', userId, list)
-    },
-
-    async deleteList (userId, listId) {
-        const list = await this.getList(userId, listId)
-        if (!list) {
-            const error = 'List not found'
-            throw error
+        if (!(list instanceof List)) {
+            throw Error('Wrong list object type')
         }
-        await idb.deleteObjectsBy('item', { listId: listId })
-        return idb.deleteObjectsBy('list', { id: listId })
-    },
+        await this.saveObject('list', userId, list)
 
-    async getListItems (userId, listId) {
-        return idb.getObjectsBy('item', { listId: listId })
-    },
-
-    async getListItem (userId, listId, itemId) {
-        const item = await idb.getObjectsBy('item', { id: itemId })
-        if (!item || item.userId !== userId || item.listId !== listId) {
-            return null
-        }
-        return item
-    },
-
-    async saveListItem (userId, listItem) {
-        return this.saveObject('item', userId, listItem)
-    },
-
-    processObjectsToSave (table, userId, objects) {
-        objects.forEach(object => this.setModificationStatus(userId, object))
-        return idb.updateObjects(table, objects.map(object => this.getObject(object)))
+        list.listItems.forEach(async item => {
+            item.listId = list.id
+            await this.saveListItem(userId, item)
+        })
     },
 
     async saveLists (userId, lists) {
-        return this.processObjectsToSave('list', userId, lists)
+        lists.forEach(async list => await this.saveList(userId, list))
+    },
+
+    async saveListItem (userId, listItem) {
+        if (!(listItem instanceof ListItem)) {
+            throw Error('Wrong List Item object type')
+        }
+
+        if (!listItem.listId) {
+            throw Error('List Item must have a listId')
+        }
+
+        return this.saveObject('item', userId, listItem)
     },
 
     async saveListItems (userId, listItems) {
-        return this.processObjectsToSave('item', userId, listItems)
+        listItems.forEach(async item => await this.saveListItem(userId, item))
+    },
+
+    async deleteList (userId, listId) {
+        await idb.deleteObjectsBy('item', { listId: listId })
+        return idb.deleteObjectsBy('list', { id: listId })
     },
 
     async getLastSynchonizationTimeForUser (userId) {

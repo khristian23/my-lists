@@ -167,12 +167,6 @@ export default {
             this.list.syncStatus = this.$Const.changeStatus.changed
             this.list.itemModifiedAt = new Date().getTime()
         },
-        async saveListItem (listItem) {
-            await this.flagListAsChanged()
-            listItem.syncStatus = this.$Const.changeStatus.changed
-            await Storage.saveListItem(this.user.uid, listItem)
-            this.loadListItems()
-        },
         async _saveList () {
             this._collectListItems()
             this._flagListAsChanged()

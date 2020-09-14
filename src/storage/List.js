@@ -9,7 +9,7 @@ class List extends ListObject {
         this._priority = data.priority || 0
         this._type = data.type
         this._subtype = data.subtype
-        this._user = data.user
+        this._userId = data.userId
         this._modifiedAt = data.modifiedAt
         this._itemModifiedAt = data.itemModifiedAt
         this._syncStatus = data.syncStatus
@@ -130,8 +130,14 @@ class List extends ListObject {
 
     toObject () {
         const keys = ['id', 'name', 'description', 'priority', 'type', 'subtype', 'modifiedAt',
-            'itemModifiedAt', 'syncStatus', 'firebaseId', 'user']
+            'itemModifiedAt', 'syncStatus', 'firebaseId', 'userId']
         return this._createObject(keys)
+    }
+
+    clone () {
+        const listClone = new List(this.toObject())
+        listClone.listItems = this.listItems.map(item => item.clone())
+        return listClone
     }
 }
 

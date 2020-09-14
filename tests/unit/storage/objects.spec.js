@@ -41,7 +41,7 @@ describe('Objects', function () {
                 subtype: 'my Subtype',
                 modifiedAt: timestamp,
                 itemModifiedAt: timestamp,
-                user: 'Christian'
+                userId: 'Christian'
             })
             let actualObject = JSON.stringify(list.toObject())
             let expectedObject = JSON.stringify({
@@ -55,7 +55,7 @@ describe('Objects', function () {
                 itemModifiedAt: timestamp,
                 syncStatus: '',
                 firebaseId: '',
-                user: 'Christian'
+                userId: 'Christian'
             })
             
             assert.equal(actualObject, expectedObject)
@@ -89,7 +89,7 @@ describe('Objects', function () {
                 id: 1001,
                 name: 'to name',
                 modifiedAt: timestamp,
-                user: 'Christian',
+                userId: 'Christian',
                 status: 'Done'
             })
             let actualObject = JSON.stringify(listItem.toObject())
@@ -101,7 +101,7 @@ describe('Objects', function () {
                 status: 'Done',
                 syncStatus: '',
                 firebaseId: '',
-                user: 'Christian'
+                userId: 'Christian'
             })
 
             assert.equal(actualObject, expectedObject)

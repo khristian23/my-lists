@@ -28,12 +28,13 @@ describe('List View', () => {
     let getListStub
 
     before(() => {
-        getListStub = sinon.stub(storage, 'getList').returns({
+        getListStub = sinon.stub(storage, 'getList').returns(Promise.resolve(new ListClass({
             name: 'Christian',
             description: 'List description',
             type: 'shop',
-            subtype: 'groceries'
-        })
+            subtype: 'groceries',
+            firebaseId: 'ABC-DEF-111-000'
+        })))
     })
 
     after(() => {
@@ -87,11 +88,15 @@ describe('List View', () => {
         })
     })
 
-    it('should emit save list event with proper list values', () => {
+    it('should emit save list event with proper list values', async () => {
         const validate = sinon.stub(wrapper.vm, 'validate').returns(true)
 
+        router.push({ name: 'list', params: { id: '400' } })
+        await wrapper.setProps({ user: { uid: 'Christian'} })
+
+        await flushPromises()
+
         wrapper.vm.name = 'Christian List Name'
-        wrapper.vm.description = 'Christian List Description'
         wrapper.vm.type = 'wish'
         wrapper.vm.subtype = null
 
@@ -99,10 +104,13 @@ describe('List View', () => {
 
         const listToSave = wrapper.emitted('saveList')[0][0]
         assert.ok(listToSave instanceof ListClass, 'Wrong object type')
-        assert.equal(listToSave.name, 'Christian List Name')
-        assert.equal(listToSave.description, 'Christian List Description')
-        assert.equal(listToSave.type, 'wish')
-        assert.equal(listToSave.subtype, null)
+        assert.equal(listToSave.name, 'Christian List Name', 'Set new name')
+        assert.equal(listToSave.description, 'List description', 'Retain description')
+        assert.equal(listToSave.type, 'wish', 'Set new type')
+        assert.equal(listToSave.subtype, null, 'Set new subtype')
+        assert.equal(listToSave.modifiedAt, new Date().getTime(), 'Sets modification time')
+        assert.equal(listToSave.syncStatus, Consts.changeStatus.changed, 'Sets changed flag')
+        assert.equal(listToSave.firebaseId, 'ABC-DEF-111-000', 'Retains firebase Id')
     })
 
     it('should try to retrieve the right list', async () => {
@@ -113,4 +121,5 @@ describe('List View', () => {
 
         assert.ok(getListStub.lastCall.calledWith('ChristianUser', 300))
     })
+
 })

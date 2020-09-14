@@ -47,6 +47,7 @@ export default {
     props: ['user'],
     data () {
         return {
+            list: new List({}),
             listId: null,
             name: '',
             description: '',
@@ -100,14 +101,14 @@ export default {
 
             if (this.$route.params.id !== 'new') {
                 this.listId = parseInt(this.$route.params.id, 10)
-                const list = await Storage.getList(this.user.uid, this.listId)
+                this.list = await Storage.getList(this.user.uid, this.listId)
 
-                if (!list) {
+                if (!this.list) {
                     throw new Error(`List ${this.listId} does not exist`)
                 }
 
                 this.fields.forEach(field => {
-                    this[field] = list[field]
+                    this[field] = this.list[field]
                 })
             } else {
                 this.type = this.$Const.lists.types[0].id
@@ -137,15 +138,19 @@ export default {
         },
         onSave () {
             if (this.validate()) {
-                const list = new List({
-                    id: this.listId,
-                    name: this.name,
-                    description: this.description,
-                    type: this.type,
-                    subtype: this.subtype
-                })
+                this.list.id = this.listId
+                this.list.name = this.name
+                this.list.description = this.description
+                this.list.type = this.type
+                this.list.subtype = this.subtype
+                this.list.modifiedAt = new Date().getTime()
+                if (this.listId) {
+                    this.list.syncStatus = this.$Const.changeStatus.changed
+                } else {
+                    this.list.syncStatus = this.$Const.changeStatus.new
+                }
 
-                this.$emit('saveList', list)
+                this.$emit('saveList', this.list)
             }
         }
     }

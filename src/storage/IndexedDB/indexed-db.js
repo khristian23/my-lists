@@ -106,8 +106,7 @@ export default {
             const store = trans.objectStore(table)
             const request = store.add(object)
             request.onsuccess = r => {
-                object.id = r.target.result
-                resolve(object)
+                resolve(r.target.result)
             }
             request.onerror = r => {
                 console.error(r)
