@@ -30,7 +30,7 @@ describe('Local Storage', () => {
     async function createListWithIdAndAssertAllListsCount (userId, id, listCount) {
         await createAndSaveList(userId, id)
         const lists = await storage.getAllLists()
-        assert.equal(lists.length, listCount, 'wrong number of lists')
+        assert.strictEqual(lists.length, listCount, 'wrong number of lists')
     }
 
     async function assertListProperties (userId, listId, name) {
@@ -39,30 +39,32 @@ describe('Local Storage', () => {
         if (listId) {
             assert.ok(Number.isInteger(list.id), 'Id is NaN')
         } else {
-            assert.equal(list.id, listId , 'wrong list Id')
+            assert.strictEqual(list.id, listId , 'wrong list Id')
         }
-        assert.equal(list.name, name, 'wrong list name')
+        assert.strictEqual(list.name, name, 'wrong list name')
+        assert.strictEqual(list.userId, userId, 'User Id is set')
+        assert.ok(/^\d+$/.test(list.id), 'List ID created')
     }
 
     async function assertUserListCount (userId, listCount) {
         const lists = await storage.getLists(userId)
-        assert.equal(lists.length, listCount, 'wrong number of lists')
+        assert.strictEqual(lists.length, listCount, 'wrong number of lists')
         lists.forEach(list => assert.ok(list instanceof List))
     }
 
     function assertListItems (newLists, savedLists) {
-        assert.equal(newLists.length, savedLists.length, 'wrong number of list items')
+        assert.strictEqual(newLists.length, savedLists.length, 'wrong number of list items')
         newLists.forEach((newList, index) => {
             const savedList = savedLists[index]
-            assert.equal(newList.id, savedList.id, 'wrong item id')
-            assert.equal(newList.name, savedList.name, 'wrong item name')
+            assert.strictEqual(newList.id, savedList.id, 'wrong item id')
+            assert.strictEqual(newList.name, savedList.name, 'wrong item name')
         })
     }
 
     describe('Initial assessments', () => {
         it('initially retrieves zero lists', async () => {
             const lists = await storage.getAllLists()
-            assert.equal(lists.length, 0)
+            assert.strictEqual(lists.length, 0)
         })
     })
 
@@ -144,7 +146,7 @@ describe('Local Storage', () => {
         it('should create a list with no items', async () => {
             createAndSaveList(userId, 400)
             const list = await storage.getList(userId, 400)
-            assert.equal(list.listItems.length, 0)
+            assert.strictEqual(list.listItems.length, 0)
         })
 
         it('should create a list with items', async () => {
@@ -154,6 +156,61 @@ describe('Local Storage', () => {
 
             const savedList = await storage.getList(userId, 500)
             assertListItems(newList.listItems, savedList.listItems)
+        })
+
+        it('should throw an error if list item type is not instance of ListItem', async () => {
+            assert.throws(() => { storage.saveListItem(userId, {}) }, /^Error: Wrong List Item object type$/)
+        })
+
+        it('should throw an error if listId is not present on save', async () => {
+            assert.throws(() => { storage.saveListItem(userId, new ListItem({})) }, /^Error: List Item must have a listId$/)
+        })
+
+        it('should directly save a new list item', async () => {
+            const currentListItemCount = storage.getList(userId, 500).listItems.length
+
+            const listItem = new ListItem({
+                name: 'Christian List item',
+                listId: 500
+            })
+
+            await storage.saveListItem(userId, listItem)
+
+            const savedList = await storage.getList(userId, 500)
+            const savedListItem = savedList.listItems.filter(item => item.name === listItem.name)[0]
+            assert.ok(savedListItem)
+            assert.strictEqual(savedListItem.userId, userId, 'User ID is set')
+            assert.ok(/^\d+$/.test(savedListItem.id), 'List Item ID is set')
+            assert.strictEqual(savedList.listItems.length, currentListItemCount + 1, 'A new item added')
+        })
+
+        it('should be able to edit existent list item', async () => {
+            const existentList = storage.getList(userId, 500)
+
+            const listItem = new ListItem({
+                id: existentList.listItems[0].id,
+                name: 'Replaced name',
+                listId: existentList.id
+            })
+
+            await storage.saveListItem(userId, listItem)
+
+            const savedList = await storage.getList(userId, existentList.id)
+            assert.strictEqual(savedList.listItems.length, existentList.listItems.length, 'No added items')
+            assert.strictEqual(savedList.listItems[0].name, 'Replaced name', 'name changed')
+        })
+
+        it('should direcly save an array of list items', async () => {
+            const listItems = [
+                new ListItem({ id: 501, name: 'item 1 of array', listId: 500 }),
+                new ListItem({ name: 'item 2 of array', listId: 500 }),
+                new ListItem({ name: 'item 3 of array', listId: 500 })
+            ]
+
+            await storage.saveListItems(userId, listItems)
+            
+            const savedList = await storage.getList(userId, 500)
+            assert.ok(listItems.every(newItem => savedList.listItems.some(item => item.name === newItem.name)))
         })
     })
 })

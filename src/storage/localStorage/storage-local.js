@@ -18,10 +18,10 @@ export default {
         localStorage.setItem(KEY, JSON.stringify(data))
     },
 
-    _getListPosition (lists, listId) {
+    _getListObjectPosition (list, listId) {
         let i = 0
-        for (; i < lists.length; i++) {
-            if (lists[i].id === listId) {
+        for (; i < list.length; i++) {
+            if (list[i].id === listId) {
                 break
             }
         }
@@ -30,7 +30,7 @@ export default {
 
     _saveUserListsReplacingList (userId, listId, list) {
         const userLists = this._getRawLists(userId)
-        const listPosition = this._getListPosition(userLists, listId)
+        const listPosition = this._getListObjectPosition(userLists, listId)
         if (list) {
             const listData = list.toObject()
             listData.listItems = list.listItems.map(item => item.toObject())
@@ -86,6 +86,7 @@ export default {
             list.id = Math.floor(Math.random() * 1000)
         }
 
+        list.userId = userId
         this._saveUserListsReplacingList(userId, list.id, list)
     },
 
@@ -93,6 +94,35 @@ export default {
         const users = this._getDataFromStorage()
         users[userId] = lists
         this._saveDataToStorage(users)
+    },
+
+    saveListItem (userId, listItem) {
+        if (!(listItem instanceof ListItem)) {
+            throw Error('Wrong List Item object type')
+        }
+
+        if (!listItem.listId) {
+            throw Error('List Item must have a listId')
+        }
+
+        if (!listItem.id) {
+            listItem.id = Math.floor(Math.random() * 1000)
+        }
+
+        listItem.userId = userId
+
+        const list = this.getList(userId, listItem.listId)
+        this._addOrReplaceListItem(list, listItem)
+        this.saveList(userId, list)
+    },
+
+    _addOrReplaceListItem (list, listItem) {
+        const itemPosition = this._getListObjectPosition(list.listItems, listItem.id)
+        list.listItems.splice(itemPosition, 1, listItem)
+    },
+
+    saveListItems (userId, listItems) {
+        listItems.forEach(item => this.saveListItem(userId, item))
     },
 
     deleteList (userId, listId) {
