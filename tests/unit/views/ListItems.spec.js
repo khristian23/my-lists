@@ -1,27 +1,13 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils'
-import VueRouter from 'vue-router'
-import ConstantsPlugin from '@/plugins/constants'
-import { strings } from '@/mixins/strings'
-import storage from '@/storage/storage'
-import ListItemsView from '@/views/ListItems'
+import { shallowMount } from '@vue/test-utils'
+import { localVue, router } from './routerVueSetup'
 import Consts from '@/util/constants'
+import assert from 'assert'
+import flushPromises from 'flush-promises'
+import ListItemsView from '@/views/ListItems'
 import sinon from 'sinon'
+import storage from '@/storage/storage'
 import List from '@/storage/List'
 import ListItem from '@/storage/ListItem'
-
-const assert = require('assert')
-const flushPromises = require('flush-promises');
-
-const localVue = createLocalVue()
-localVue.use(VueRouter)
-localVue.use(ConstantsPlugin)
-localVue.mixin(strings)
-
-const routes = [{ path: '/list/:id/items', name: 'list-items', component: ListItemsView }]
-
-const router = new VueRouter({
-  routes
-})
 
 describe('List Items View', () => {
     let wrapper
@@ -136,7 +122,8 @@ describe('List Items View', () => {
         assert.equal(wrapper.vm.pendingItems.length, 0, 'More pending items than expected')
         assert.ok(!wrapper.vm.hasPendingItems, 'Has pending items should be false')
         assert.ok(saveListStub.calledOnce, 'Called once')
-        const calledWith = saveListStub.lastCall.firstArg
+        
+        const calledWith = saveListStub.lastCall.args[1]
         assert.deepEqual(calledWith.toObject(), expectedList.toObject(), 'Called with wrong list')
         expectedList.listItems.forEach((item, index) => {
             assert.deepEqual(calledWith.listItems[index].toObject(), item.toObject(), 'Wrong List Item at ' + index)
@@ -162,7 +149,8 @@ describe('List Items View', () => {
         assert.equal(wrapper.vm.doneItems.length, 0, 'More done items than expected')
         assert.ok(!wrapper.vm.hasDoneItems, 'Has done items should be false')
         assert.ok(saveListStub.calledOnce, 'Called once')
-        const calledWith = saveListStub.lastCall.firstArg
+
+        const calledWith = saveListStub.lastCall.args[1]
         assert.deepEqual(calledWith.toObject(), expectedList.toObject(), 'Called with wrong list')
         expectedList.listItems.forEach((item, index) => {
             assert.deepEqual(calledWith.listItems[index].toObject(), item.toObject(), 'Wrong List Item at ' + index)
@@ -191,7 +179,7 @@ describe('List Items View', () => {
         assert.ok(wrapper.vm.hasDoneItems, 'Has done items should be true')
         assert.ok(!wrapper.vm.hasPendingItems, 'Has pending items should be false')
         assert.ok(saveListStub.calledOnce, 'Called once')
-        const calledWith = saveListStub.lastCall.firstArg
+        const calledWith = saveListStub.lastCall.args[1]
         assert.deepEqual(calledWith.toObject(), expectedList.toObject(), 'Called with wrong list')
         expectedList.listItems.forEach((item, index) => {
             assert.deepEqual(calledWith.listItems[index].toObject(), item.toObject(), 'Wrong List Item at ' + index)
@@ -220,7 +208,7 @@ describe('List Items View', () => {
         assert.ok(!wrapper.vm.hasDoneItems, 'Has done items should be true')
         assert.ok(wrapper.vm.hasPendingItems, 'Has pending items should be false')
         assert.ok(saveListStub.calledOnce, 'Called once')
-        const calledWith = saveListStub.lastCall.firstArg
+        const calledWith = saveListStub.lastCall.args[1]
         assert.deepEqual(calledWith.toObject(), expectedList.toObject(), 'Called with wrong list')
         expectedList.listItems.forEach((item, index) => {
             assert.deepEqual(calledWith.listItems[index].toObject(), item.toObject(), 'Wrong List Item at ' + index)
@@ -252,7 +240,7 @@ describe('List Items View', () => {
         assert.ok(wrapper.vm.hasDoneItems, 'Has done items should be true')
         assert.ok(wrapper.vm.hasPendingItems, 'Has pending items should be false')
         assert.ok(saveListStub.calledOnce, 'Called once')
-        const calledWith = saveListStub.lastCall.firstArg
+        const calledWith = saveListStub.lastCall.args[1]
         assert.deepEqual(calledWith.toObject(), expectedList.toObject(), 'Called with wrong list')
         expectedList.listItems.forEach((item, index) => {
             assert.deepEqual(calledWith.listItems[index].toObject(), item.toObject(), 'Wrong List Item at ' + index)
@@ -283,7 +271,7 @@ describe('List Items View', () => {
         })
 
         assert.ok(saveListStub.calledOnce, 'Called once')
-        const calledWith = saveListStub.lastCall.firstArg
+        const calledWith = saveListStub.lastCall.args[1]
         assert.deepEqual(calledWith.toObject(), expectedList.toObject(), 'Called with wrong list')
         expectedList.listItems.forEach((item, index) => {
             assert.deepEqual(calledWith.listItems[index].toObject(), item.toObject(), 'Wrong List Item at ' + index)

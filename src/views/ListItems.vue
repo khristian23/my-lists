@@ -134,7 +134,8 @@ export default {
             this.$router.push({ name: this.$Const.routes.listItem, params: { list: this.listId, id: itemId } })
         },
         _getListItemById (itemId) {
-            return this.items.filter(items => items.id === itemId)[0]
+            const idToFind = parseInt(itemId, 10)
+            return this.items.filter(item => item.id === idToFind)[0]
         },
         onItemDone (itemId) {
             const changedItem = this._getListItemById(itemId)
@@ -170,7 +171,7 @@ export default {
         async _saveList () {
             this._collectListItems()
             this._flagListAsChanged()
-            await Storage.saveList(this.list)
+            await Storage.saveList(this.user.uid, this.list)
         }
     }
 }

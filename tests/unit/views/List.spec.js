@@ -1,27 +1,12 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils'
-import VueRouter from 'vue-router'
-import ConstantsPlugin from '@/plugins/constants'
-import { strings } from '@/mixins/strings'
-
+import { shallowMount } from '@vue/test-utils'
+import { localVue, router } from './routerVueSetup'
+import Consts from '@/util/constants'
+import assert from 'assert'
+import flushPromises from 'flush-promises'
 import List from '@/views/List.vue'
 import ListClass from '@/storage/List'
 import sinon from 'sinon'
 import storage from '@/storage/storage'
-import Consts from '@/util/constants'
-
-const assert = require('assert')
-const flushPromises = require('flush-promises');
-
-const localVue = createLocalVue()
-localVue.use(VueRouter)
-localVue.use(ConstantsPlugin)
-localVue.mixin(strings)
-
-const routes = [{ path: '/list/:id', name: 'list', component: List }]
-
-const router = new VueRouter({
-  routes
-})
 
 describe('List View', () => {
     let wrapper
@@ -53,12 +38,12 @@ describe('List View', () => {
         await wrapper.setProps({ user: { uid: 'Christian'} })
 
         await flushPromises()
-        assert.equal(wrapper.vm.listId, null)
-        assert.equal(wrapper.vm.name, '')
-        assert.equal(wrapper.vm.description, '') 
-        assert.equal(wrapper.vm.type, Consts.lists.types[0].id)
-        assert.equal(wrapper.vm.subtype, Consts.lists.types[0].subTypes[0].id)
-        assert.equal(wrapper.vm.title, 'Create List')
+        assert.strictEqual(wrapper.vm.listId, null)
+        assert.strictEqual(wrapper.vm.name, '')
+        assert.strictEqual(wrapper.vm.description, '') 
+        assert.strictEqual(wrapper.vm.type, Consts.lists.types[0].id)
+        assert.strictEqual(wrapper.vm.subtype, Consts.lists.types[0].subTypes[0].id)
+        assert.strictEqual(wrapper.vm.title, 'Create List')
     })
 
     it('should be able to populate list values of existent list', async () => {
@@ -68,12 +53,12 @@ describe('List View', () => {
         router.push({ name: 'list', params: { id: 200 } })
 
         await flushPromises()
-        assert.equal(wrapper.vm.listId, 200)
-        assert.equal(wrapper.vm.name, 'Christian')
-        assert.equal(wrapper.vm.description, 'List description')
-        assert.equal(wrapper.vm.type, 'shop')
-        assert.equal(wrapper.vm.subtype, 'groceries')
-        assert.equal(wrapper.vm.title, 'Christian')
+        assert.strictEqual(wrapper.vm.listId, 200)
+        assert.strictEqual(wrapper.vm.name, 'Christian')
+        assert.strictEqual(wrapper.vm.description, 'List description')
+        assert.strictEqual(wrapper.vm.type, 'shop')
+        assert.strictEqual(wrapper.vm.subtype, 'groceries')
+        assert.strictEqual(wrapper.vm.title, 'Christian')
     })
 
     it('should change the subtype based on type changes', () => {
@@ -81,9 +66,9 @@ describe('List View', () => {
             wrapper.vm.type = type.id
             wrapper.vm.onTypeSelection()
             if (type.subTypes.length) {
-                assert.equal(wrapper.vm.subtype, type.subTypes[0].id)
+                assert.strictEqual(wrapper.vm.subtype, type.subTypes[0].id)
             } else {
-                assert.equal(wrapper.vm.subtype, undefined)
+                assert.strictEqual(wrapper.vm.subtype, null)
             }
         })
     })
@@ -104,13 +89,13 @@ describe('List View', () => {
 
         const listToSave = wrapper.emitted('saveList')[0][0]
         assert.ok(listToSave instanceof ListClass, 'Wrong object type')
-        assert.equal(listToSave.name, 'Christian List Name', 'Set new name')
-        assert.equal(listToSave.description, 'List description', 'Retain description')
-        assert.equal(listToSave.type, 'wish', 'Set new type')
-        assert.equal(listToSave.subtype, null, 'Set new subtype')
-        assert.equal(listToSave.modifiedAt, new Date().getTime(), 'Sets modification time')
-        assert.equal(listToSave.syncStatus, Consts.changeStatus.changed, 'Sets changed flag')
-        assert.equal(listToSave.firebaseId, 'ABC-DEF-111-000', 'Retains firebase Id')
+        assert.strictEqual(listToSave.name, 'Christian List Name', 'Set new name')
+        assert.strictEqual(listToSave.description, 'List description', 'Retain description')
+        assert.strictEqual(listToSave.type, 'wish', 'Set new type')
+        assert.strictEqual(listToSave.subtype, null, 'Set new subtype')
+        assert.strictEqual(listToSave.modifiedAt, new Date().getTime(), 'Sets modification time')
+        assert.strictEqual(listToSave.syncStatus, Consts.changeStatus.changed, 'Sets changed flag')
+        assert.strictEqual(listToSave.firebaseId, 'ABC-DEF-111-000', 'Retains firebase Id')
     })
 
     it('should try to retrieve the right list', async () => {

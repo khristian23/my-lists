@@ -29,8 +29,8 @@ export default {
     data () {
         return {
             itemId: null,
-            listId: parseInt(this.$route.params.list, 10),
-            item: {},
+            listId: null,
+            item: null,
             error: null,
             name: '',
             fields: ['name']
@@ -40,17 +40,13 @@ export default {
         '$route.params.id': {
             immediate: true,
             async handler () {
-                if (this.$route.params.id !== 'new') {
-                    this.itemId = parseInt(this.$route.params.id)
-                    this.item = await Storage.getListItem(this.user.uid, this.listId, this.itemId)
-                    if (!this.item) {
-                        this.$router.replace({ name: this.$Const.routes.list, params: { id: this.listId } })
-                    } else {
-                        this.fields.forEach(d => {
-                            this[d] = this.item[d]
-                        })
-                    }
-                }
+                await this.initializeView()
+            }
+        },
+        user: {
+            immediate: true,
+            async handler () {
+                await this.initializeView()
             }
         }
     },
@@ -66,6 +62,25 @@ export default {
         }
     },
     methods: {
+        async initializeView () {
+            if (!this.$route.params.id || !this.user) {
+                return
+            }
+
+            this.listId = parseInt(this.$route.params.list, 10)
+
+            if (this.$route.params.id !== 'new') {
+                this.itemId = parseInt(this.$route.params.id, 10)
+                this.item = await Storage.getListItem(this.user.uid, this.listId, this.itemId)
+                if (!this.item) {
+                    this.$router.replace({ name: this.$Const.routes.list, params: { id: this.listId } })
+                } else {
+                    this.fields.forEach(d => {
+                        this[d] = this.item[d]
+                    })
+                }
+            }
+        },
         validate () {
             this.error = null
             if (!this.$refs.form.validate()) {

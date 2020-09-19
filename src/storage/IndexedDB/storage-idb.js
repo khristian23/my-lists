@@ -38,7 +38,11 @@ export default {
         return items.map(item => new ListItem(item))
     },
 
-    async saveObject (table, userId, listObject) {
+    async _saveObject (table, userId, listObject) {
+        if (typeof userId !== 'string' || userId === '') {
+            throw Error('Invalid user id')
+        }
+
         listObject.userId = userId
 
         const objectLiteralToSave = this.getObject(listObject)
@@ -55,7 +59,8 @@ export default {
         if (!(list instanceof List)) {
             throw Error('Wrong list object type')
         }
-        await this.saveObject('list', userId, list)
+
+        await this._saveObject('list', userId, list)
 
         list.listItems.forEach(async item => {
             item.listId = list.id
@@ -76,7 +81,7 @@ export default {
             throw Error('List Item must have a listId')
         }
 
-        return this.saveObject('item', userId, listItem)
+        return this._saveObject('item', userId, listItem)
     },
 
     async saveListItems (userId, listItems) {
