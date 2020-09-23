@@ -23,6 +23,8 @@ import '@ui5/webcomponents-icons/dist/icons/save'
 import '@ui5/webcomponents/dist/Input'
 import '@ui5/webcomponents/dist/Label'
 
+import ListItem from '@/storage/ListItem'
+
 export default {
     name: 'list-item',
     props: ['user'],
@@ -30,6 +32,7 @@ export default {
         return {
             itemId: null,
             listId: null,
+            list: null,
             item: null,
             error: null,
             name: '',
@@ -63,22 +66,54 @@ export default {
     },
     methods: {
         async initializeView () {
-            if (!this.$route.params.id || !this.user) {
+            if (!this._validateParameters()) {
                 return
             }
 
-            this.listId = parseInt(this.$route.params.list, 10)
+            await this._loadList()
 
-            if (this.$route.params.id !== 'new') {
-                this.itemId = parseInt(this.$route.params.id, 10)
-                this.item = await Storage.getListItem(this.user.uid, this.listId, this.itemId)
-                if (!this.item) {
-                    this.$router.replace({ name: this.$Const.routes.list, params: { id: this.listId } })
-                } else {
-                    this.fields.forEach(d => {
-                        this[d] = this.item[d]
-                    })
-                }
+            if (!this.$route.params.id || this.$route.params.id === 'new') {
+                this._loadNewItem()
+            } else {
+                this._loadExistentItem()
+            }
+        },
+        _validateParameters () {
+            if (this.$route.name !== this.$Const.routes.listItem) {
+                return false
+            }
+
+            if (!this.$route.params.id || !this.$route.params.list || !this.user) {
+                return false
+            }
+            return true
+        },
+        async _loadList () {
+            this.listId = parseInt(this.$route.params.list, 10)
+            try {
+                this.list = await Storage.getList(this.user.uid, this.listId)
+            } catch (error) {
+                this.$emit('showError', error.message)
+                this.$router.replace({ name: this.$Const.routes.lists })
+            }
+        },
+        _loadNewItem () {
+            this.name = ''
+        },
+        _loadExistentItem () {
+            this.itemId = parseInt(this.$route.params.id, 10)
+
+            this.item = this.list.listItems.filter(item => item.id === this.itemId)[0]
+            if (this.item) {
+                this.fields.forEach(field => {
+                    this[field] = this.item[field]
+                })
+            } else {
+                this.$emit('showError', `List Item Id ${this.itemId} not found`)
+                this.$router.replace({ 
+                    name: this.$Const.routes.listItem, 
+                    params: { list: this.listId, id: 'new' }
+                })
             }
         },
         validate () {
@@ -88,16 +123,32 @@ export default {
             }
             return !this.error
         },
+        _processNewListItem () {
+            const listItem = new ListItem({
+                id: null,
+                listId: this.listId,
+                name: this.name
+            })
+            listItem.flagAsNew()
+            this.list.addListItem(listItem)
+            this.list.flagAsItemModified()
+        },
+        _processExistentListItem () {
+            this.item.name = this.name
+            this.item.listId = this.listId
+            this.item.flagAsModified()
+            this.list.flagAsItemModified()
+        },
         onSave () {
             if (this.validate()) {
-                const listItem = {
-                    id: this.itemId,
-                    listId: this.listId,
-                    name: this.name,
-                    syncStatus: this.$Const.changeStatus.changed
+                if (!this.item) {
+                    this._processNewListItem()
+                } else {
+                    this._processExistentListItem()
                 }
-
-                this.$emit('saveItem', listItem)
+                Storage.saveList(this.user.uid, this.list)
+                this.$emit('showToast', 'List Item saved')
+                this.$router.replace({ name: this.$Const.routes.listItems, params: { id: this.listId }})
             }
         }
     }

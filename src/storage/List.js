@@ -1,4 +1,5 @@
 import ListObject from './ListObject'
+import Consts from '@/util/constants'
 
 class List extends ListObject {
     constructor (data) {
@@ -120,6 +121,21 @@ class List extends ListObject {
     addListItem (listItem) {
         listItem.listId = this._id
         this._listItems.push(listItem)
+    }
+
+    flagAsNew () {
+        this._syncStatus = Consts.changeStatus.new
+        this._modifiedAt = new Date().getTime()
+    }
+
+    flagAsModified () {
+        this._syncStatus = Consts.changeStatus.changed
+        this._modifiedAt = new Date().getTime()
+    }
+
+    flagAsItemModified () {
+        this._syncStatus = Consts.changeStatus.changed
+        this._itemModifiedAt = new Date().getTime()
     }
 
     toFirebaseObject () {

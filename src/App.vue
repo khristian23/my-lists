@@ -3,6 +3,7 @@
         <router-view
             :user="user"
             :footerMessage="footerMessage"
+            @showError="showToast"
             @synchronize="triggerSynchronization"
             @login="onLogin"
             @logout="onLogout"

@@ -7,6 +7,8 @@ yarn-error.log*
 /www/
 /platforms/
 /src/firebase-init.js
+/tests/e2e/screenshots/
+/tests/e2e/videos/
 
 # Editor directories and files
 .idea

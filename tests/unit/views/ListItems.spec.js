@@ -1,5 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import { localVue, router } from './routerVueSetup'
+import dateMocker from './dateMocker'
 import Consts from '@/util/constants'
 import assert from 'assert'
 import flushPromises from 'flush-promises'
@@ -9,11 +10,12 @@ import storage from '@/storage/storage'
 import List from '@/storage/List'
 import ListItem from '@/storage/ListItem'
 
+const USER_ID = 'Christian'
+
 describe('List Items View', () => {
     let wrapper
     let quickCreateStub
     let currentDate
-    const realDate = Date;
     let getListStub
     let saveListStub
 
@@ -22,25 +24,16 @@ describe('List Items View', () => {
         getListStub = sinon.stub(storage, 'getList')
         saveListStub = sinon.stub(storage, 'saveList')
 
-        currentDate = new Date()
-  
-        global.Date = class extends Date {
-            constructor(date) {
-                if (date) {
-                    return super(date);
-                }
-
-                return currentDate;
-            }
-        };
-
+        dateMocker.mock()
+        currentDate = dateMocker.getCurrentDate()
     })
 
     after(() => {
         quickCreateStub.restore()
         getListStub.restore()
         saveListStub.restore()
-        global.Date = realDate;
+        
+        dateMocker.restore()
     })
 
     beforeEach(() => {
@@ -51,8 +44,8 @@ describe('List Items View', () => {
     })
 
     async function navigateToListAndWait (listId) {
-        await wrapper.setProps({ user: { uid: 'Christian'} })
         router.push({ name: Consts.routes.listItems, params: { id: listId } })
+        await wrapper.setProps({ user: { uid: USER_ID} })
         await flushPromises()
     }
 
@@ -76,16 +69,22 @@ describe('List Items View', () => {
         return list.listItems.filter(item => item.id === listItemId)[0]
     }
 
-    it('should show no data message in case of not existent list', async () => {
+    it('should navigate back to Lists view if invalid List Id', async () => {
+        getListStub.withArgs(USER_ID, 999).throws()
+        const routerReplaceSpy = sinon.spy(router, 'replace')
+
         await navigateToListAndWait(999)
-        assert.equal(wrapper.vm.title, 'List not found', 'wrong title')
-        assert.equal(wrapper.find('h4').element.textContent, 'No data found')
+        
+        assert.ok(wrapper.emitted().showError, 'Show error not emitted')
+        assert.ok(routerReplaceSpy.calledWith({ name: Consts.routes.lists }))
+
+        routerReplaceSpy.restore()
     })
 
     it('should show no data message on empty existent list', async () => {
-        getListStub.returns({
+        getListStub.returns(new List({
             name: 'Christian List Name'
-        })
+        }))
         await navigateToListAndWait(100)
 
         assert.equal(wrapper.vm.title, 'Christian List Name', 'wrong title')

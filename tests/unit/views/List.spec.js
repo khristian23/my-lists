@@ -1,5 +1,6 @@
 import { shallowMount } from '@vue/test-utils'
 import { localVue, router } from './routerVueSetup'
+import dateMocker from './dateMocker'
 import Consts from '@/util/constants'
 import assert from 'assert'
 import flushPromises from 'flush-promises'
@@ -11,8 +12,12 @@ import storage from '@/storage/storage'
 describe('List View', () => {
     let wrapper
     let getListStub
+    let currentDate
 
     before(() => {
+        dateMocker.mock()
+        currentDate = dateMocker.getCurrentDate()
+
         getListStub = sinon.stub(storage, 'getList').returns(Promise.resolve(new ListClass({
             name: 'Christian',
             description: 'List description',
@@ -24,6 +29,7 @@ describe('List View', () => {
 
     after(() => {
         getListStub.restore()
+        dateMocker.restore()
     })
 
     beforeEach(() => {
@@ -93,7 +99,7 @@ describe('List View', () => {
         assert.strictEqual(listToSave.description, 'List description', 'Retain description')
         assert.strictEqual(listToSave.type, 'wish', 'Set new type')
         assert.strictEqual(listToSave.subtype, null, 'Set new subtype')
-        assert.strictEqual(listToSave.modifiedAt, new Date().getTime(), 'Sets modification time')
+        assert.strictEqual(listToSave.modifiedAt, currentDate.getTime(), 'Sets modification time')
         assert.strictEqual(listToSave.syncStatus, Consts.changeStatus.changed, 'Sets changed flag')
         assert.strictEqual(listToSave.firebaseId, 'ABC-DEF-111-000', 'Retains firebase Id')
     })

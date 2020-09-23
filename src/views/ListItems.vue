@@ -89,15 +89,23 @@ export default {
     },
     methods: {
         async _intializeListItems () {
+            if (this.$route.name !== this.$Const.routes.listItems) {
+                return
+            }
+
             this.listId = parseInt(this.$route.params.id, 10)
             if (Number.isNaN(this.listId) || !this.user) {
                 return
             }
 
-            this.list = await Storage.getList(this.user.uid, this.listId)
-            if (this.list) {
-                this.items = this.list.listItems || []
+            try {
+                this.list = await Storage.getList(this.user.uid, this.listId)
+            } catch (error) {
+                this.$emit('showError', error.message)
+                this.$router.replace({ name: this.$Const.routes.lists })
             }
+
+            this.items = this.list.listItems || []
         },
         hookQuickCreateListeners () {
             this.$refs.quick.addEventListener('focus', () => {

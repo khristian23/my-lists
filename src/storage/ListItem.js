@@ -1,4 +1,5 @@
 import ListObject from './ListObject'
+import Consts from '@/util/constants'
 
 class ListItem extends ListObject {
     constructor (data) {
@@ -28,6 +29,10 @@ class ListItem extends ListObject {
 
     set listId (listId) {
         this._listId = listId
+    }
+
+    set name (name) {
+        this._name = name
     }
 
     get name () {
@@ -89,6 +94,16 @@ class ListItem extends ListObject {
 
     set userId (userId) {
         this._userId = userId
+    }
+
+    flagAsNew () {
+        this._syncStatus = Consts.changeStatus.new
+        this._modifiedAt = new Date().getTime()
+    }
+
+    flagAsModified () {
+        this._syncStatus = Consts.changeStatus.changed
+        this._modifiedAt = new Date().getTime()
     }
 
     toFirebaseObject () {
