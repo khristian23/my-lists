@@ -46,30 +46,45 @@ export default {
     },
     watch: {
         user: {
-            handler () {
+            immediate: true,
+            async handler () {
                 if (this.user) {
-                    this.getCurrentUserLists()
+                    await this.getCurrentUserLists()
                 }
-            },
-            immediate: true
+            }
         }
     },
     methods: {
         async getCurrentUserLists () {
-            const unsortedlists = await Storage.getLists(this.user.uid)
+            const unsortedlists = await Storage.getLists(this.user.uid) || []
             this.lists = unsortedlists.sort((a, b) => a.name.localeCompare(b.name))
         },
         onListPress (listId) {
             this.$router.push({ name: this.$Const.routes.listItems, params: { id: listId } })
         },
-        async onListDelete (list) {
-            var index = this.lists.indexOf(list)
+        _getListIndexById (listId) {
+            for (let i = 0; i < this.lists.length; i++) {
+                if (this.lists[i].id === listId) {
+                    return i
+                }
+            }
+            throw Error(`List Id: ${listId} is not found`)
+        },
+        async onListDelete (listId) {
+            const index = this._getListIndexById(listId)
+            const list = this.lists[index]
 
             const message = 'Are you sure to delete list "' + list.name + '"?'
             const confirmationAnswer = await this.$refs.confirmation.showDialog(message)
             if (confirmationAnswer) {
                 this.lists.splice(index, 1)
-                this.$emit('deleteList', list.id)
+                if (list.firebaseId) {
+                    list.flagAsDeleted()
+                    await Storage.saveList(this.user.uid, list)
+                } else {
+                    await Storage.deleteList(this.user.uid, list.id)
+                }
+                this.$emit('showToast', 'List deleted')
             }
         },
         onListEdit (listId) {

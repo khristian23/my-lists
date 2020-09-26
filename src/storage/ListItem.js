@@ -106,6 +106,11 @@ class ListItem extends ListObject {
         this._modifiedAt = new Date().getTime()
     }
 
+    flagAsDeleted () {
+        this._syncStatus = Consts.changeStatus.deleted
+        this._modifiedAt = new Date().getTime()
+    }
+
     toFirebaseObject () {
         const keys = ['id', 'name', 'priority', 'modifiedAt', 'status']
         return this._createObject(keys)

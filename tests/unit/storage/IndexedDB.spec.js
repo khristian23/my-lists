@@ -235,11 +235,13 @@ describe('Indexed DB Storage', () => {
         const list = new List({
             id: 300,
             name: 'test list with items',
+            syncStatus: Const.changeStatus.changed,
             itemModifiedAt: new Date().getTime(),
             listItems: [new ListItem({
                 id: 301,
                 name: 'item 1',
-                status: Const.itemStatus.pending
+                status: Const.itemStatus.pending,
+                syncStatus: Const.changeStatus.changed
             }), new ListItem({
                 nane: 'item 2',
                 status: Const.itemStatus.pending,
@@ -362,6 +364,39 @@ describe('Indexed DB Storage', () => {
         await storage.deleteList(USER_ID, listId)
 
         assert.ok(idbDeleteObjectStub.calledWithExactly(LIST_ITEM_TABLE, { listId: listId }), 'Delete List Items')
-        assert.ok(idbDeleteObjectStub.calledWithExactly(LIST_TABLE, { id: listId }), 'Delete List Items')
+        assert.ok(idbDeleteObjectStub.calledWithExactly(LIST_TABLE, { id: listId }), 'Delete List')
+    })
+
+    it('should handle list Items from a changed Saved List', async () => {
+        idbDeleteObjectStub.reset()
+        idbDeleteObjectStub.returns(Promise.resolve({}))
+        idbUpdateObjectStub.reset()
+        idbUpdateObjectStub.returns(Promise.resolve({}))
+        idbAddObjectStub.reset()
+        idbAddObjectStub.returns(Promise.resolve({}))
+
+        const list = new List({
+            id: 300,
+            syncStatus: Const.changeStatus.changed,
+            listItems: [
+                new ListItem({ id: 30, name: 'Item1', firebaseId: 3001, syncStatus: Const.changeStatus.deleted }),
+                new ListItem({ id: 31, name: 'Item2', firebaseId: 3002 }),
+                new ListItem({ id: 32, name: 'Item3', firebaseId: 3003, syncStatus: Const.changeStatus.changed }),
+                new ListItem({ name: 'Item4', syncStatus: Const.changeStatus.new }),
+                new ListItem({ id: 34, name: 'Item5', syncStatus: Const.changeStatus.deleted }),
+            ]
+        })
+        
+        await storage.saveList(USER_ID, list)
+
+        const items = list.listItems
+        const newItem = items[3].toObject()
+        delete newItem.id
+        assert.ok(idbUpdateObjectStub.calledWithExactly(LIST_ITEM_TABLE, items[0].toObject()), 'Flag Deleted List Item')
+        assert.ok(idbUpdateObjectStub.neverCalledWith(LIST_ITEM_TABLE, items[1].toObject()), 'Unchanged List Item')
+        assert.ok(idbUpdateObjectStub.calledWithExactly(LIST_ITEM_TABLE, items[2].toObject()), 'Change List Item')
+        assert.ok(idbAddObjectStub.calledWithExactly(LIST_ITEM_TABLE, newItem), 'New List Item')
+        assert.ok(idbDeleteObjectStub.calledWithExactly(LIST_ITEM_TABLE, { id: 34 }), 'Unsync List Item')
+        assert.ok(idbUpdateObjectStub.calledWith(LIST_TABLE, list.toObject()))
     })
 })

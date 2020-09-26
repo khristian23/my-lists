@@ -1,6 +1,7 @@
 import idb from './indexed-db'
 import List from '@/storage/List'
 import ListItem from '@/storage/ListItem'
+import Consts from '@/util/constants'
 
 export default {
 
@@ -64,7 +65,11 @@ export default {
 
         list.listItems.forEach(async item => {
             item.listId = list.id
-            await this.saveListItem(userId, item)
+            if (item.syncStatus === Consts.changeStatus.deleted && !item.firebaseId) {
+                await this.deleteListItem(userId, item.id)
+            } else if (item.syncStatus) {
+                await this.saveListItem(userId, item)
+            }
         })
     },
 
@@ -91,6 +96,10 @@ export default {
     async deleteList (userId, listId) {
         await idb.deleteObjectsBy('item', { listId: listId })
         return idb.deleteObjectsBy('list', { id: listId })
+    },
+
+    async deleteListItem (userId, listItemId) {
+        return idb.deleteObjectsBy('item', { id: listItemId })
     },
 
     async getLastSynchonizationTimeForUser (userId) {
