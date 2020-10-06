@@ -1,6 +1,7 @@
 import idb from './indexed-db'
 import List from '@/storage/List'
 import ListItem from '@/storage/ListItem'
+import Profile from '@/storage/Profile'
 import Consts from '@/util/constants'
 
 export default {
@@ -18,11 +19,16 @@ export default {
 
     async getLists (userId) {
         const lists = await idb.getObjectsBy('list', { userId: userId }) || []
-        return lists.map(list => new List(list))
+        return Promise.all(lists.map(async list => {
+            const instance = new List(list)
+            instance.listItems = await this._getListItems(userId, instance.id)
+            return instance
+        }))
     },
 
     async getList (userId, listId) {
-        const list = await idb.getObjectsBy('list', { id: listId })
+        const lists = await idb.getObjectsBy('list', { id: listId })
+        const list = lists[0]
 
         if (!list || list.userId !== userId) {
             throw Error(`List ID:${listId} not found for user ${userId}`)
@@ -102,8 +108,36 @@ export default {
         return idb.deleteObjectsBy('item', { id: listItemId })
     },
 
-    async getLastSynchonizationTimeForUser (userId) {
-        return idb.getObjectsBy('sync', { userId: userId })
+    async getProfile (userId) {
+        const profiles = await idb.getObjectsBy('profile', { userId: userId })
+        if (profiles[0]) {
+            return new Profile(profiles[0])
+        } else {
+            return undefined    
+        }
+    },
+
+    async saveProfile (userId, profile) {
+        if (!(profile instanceof Profile)) {
+            throw Error('Wrong Profile type')
+        }
+
+        profile.userId = userId
+
+        const existentProfile = await this.getProfile(userId)
+        if (!existentProfile) {
+            return idb.addObject('profile', profile.toObject())
+        } else {
+            return idb.updateObject('profile', profile.toObject())
+        }
+    },
+
+    async getListsForSynchronization (userId, fromTimestamp) {
+        const lists = await this.getLists(userId)
+
+        return lists.filter(list => {
+            return (list.modifiedAt && list.modifiedAt > fromTimestamp)
+        })
     }
 
 }

@@ -46,38 +46,32 @@ export default {
             error: ''
         }
     },
-    created () {
-        Firebase.auth().getRedirectResult().then(async (result) => {
-            if (result.user) {
-                const sync = await this.getSyncConfirmation()
-                this.$emit('login', { sync: sync })
-            }
-        })
+    async created () {
+        const result = await this.$auth.getRedirectResult()
+        
+        if (result.user) {
+            const sync = await this.getSyncConfirmation()
+            this.$emit('login', { sync: sync })
+        }
     },
     methods: {
         onRegister () {
             this.$router.replace({ name: 'register' })
         },
-        onLogin () {
+        async onLogin () {
             try {
-                Firebase.auth()
-                    .signInWithEmailAndPassword(this.email, this.password)
-                    .then(async () => {
-                        const sync = await this.getSyncConfirmation()
-                        this.$emit('login', { sync: sync })
-                    }).catch(err => {
-                        this.error = err.message
-                    })
+                await this.$auth.login(this.email, this.password)
+                const sync = await this.getSyncConfirmation()
+                this.$emit('login', { sync: sync })
             } catch (e) {
-                this.error = 'Cannot reach server. Try again later'
+                this.error = e.message
             }
         },
         onGoogle () {
             try {
-                const provider = new Firebase.auth.GoogleAuthProvider()
-                Firebase.auth().signInWithRedirect(provider)
+                this.$auth.signInWithGoogleRedirect()
             } catch (e) {
-                this.error = 'Cannot reach server. Try again later'
+                this.error = e.message
             }
         },
         async getSyncConfirmation () {

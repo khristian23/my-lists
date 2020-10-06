@@ -6,12 +6,14 @@ import router from './router'
 import '@ui5/webcomponents-fiori/dist/Assets.js'
 import '@/storage/storage'
 import { strings } from './mixins/strings'
-import Constants from './plugins/constants'
+import Constants from '@/plugins/constants'
+import FirebaseUserPlugin from '@/plugins/firebaseUser'
 
 Vue.config.productionTip = false
 Vue.config.ignoredElements = [/^ui5-/]
 Vue.mixin(strings)
 Vue.use(Constants)
+Vue.use(FirebaseUserPlugin)
 
 /* eslint-disable no-new */
 new Vue({

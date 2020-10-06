@@ -3,6 +3,7 @@ import FirebaseStorage from './Firestore/storage-fire'
 import Firebase from 'firebase'
 import Const from '@/util/constants'
 import List from '@/storage/List'
+import Profile from './Profile'
 
 export default {
 
@@ -10,12 +11,22 @@ export default {
         return Firebase.auth().currentUser
     },
 
-    async getLastSynchonizationTime (userId) {
-        return LocalStorage.getLastSynchonizationTimeForUser(userId)
+    async getLastSynchonizationTimeForUser (userId) {
+        const profile = await LocalStorage.getProfile(userId)
+        if (profile) {
+            return profile.lastSyncTime
+        } else {
+            return 0
+        }
     },
 
-    async setLastSynchronizationTime (userId, syncTimestamp) {
-        LocalStorage.setLastSynchronizationTimeForUser(userId)
+    async setLastSynchronizationTimeForUser (userId, syncTimestamp) {
+        let profile = await LocalStorage.getProfile(userId)
+        if (!profile) {
+            profile = new Profile({ userId: userId })
+        }
+        profile.lastSyncTime = syncTimestamp
+        return LocalStorage.saveProfile(userId, profile)
     },
 
     computeListsToSync (localLists, serverLists) {
@@ -92,23 +103,21 @@ export default {
     },
 
     syncLocalListToFirebase (userId, localLists, onlyItems) {
-        return localLists.map(async localList => {
-            let firebaseListId
+        return Promise.all(localLists.map(async localList => {
             if (!onlyItems) {
-                firebaseListId = await FirebaseStorage.saveList(userId, localList)
-                localList.firebaseId = firebaseListId
+                localList.firebaseId  = await FirebaseStorage.saveList(userId, localList)
                 localList.syncStatus = Const.changeStatus.none
-                await LocalStorage.saveList(userId, localList)
             } else {
                 firebaseListId = localList.firebaseId
             }
 
-            return Promise.all(localList.listItems.map(async localItem => {
-                localItem.firebaseId = await FirebaseStorage.saveListItem(userId, firebaseListId, localItem)
+            await Promise.all(localList.listItems.map(async localItem => {
+                localItem.firebaseId = await FirebaseStorage.saveListItem(userId, localList.firebaseId, localItem)
                 localItem.syncStatus = Const.changeStatus.none
-                return LocalStorage.saveListItem(userId, localItem)
             }))
-        })
+
+            return LocalStorage.saveList(userId, localList)
+        }))
     },
 
     adaptFirebaseObjectToLocalId (object) {
@@ -140,13 +149,8 @@ export default {
 
     async syncAnonymousLocalListsToFirebase (userId) {
         const localLists = await LocalStorage.getLists(Const.user.anonymous)
-
-        localLists.forEach(async list => {
-            const listItems = await LocalStorage.getListItems(Const.user.anonymous, list.id)
-            list.addListItems(listItems)
-        })
-
-        return this.syncLocalListToFirebase(userId, localLists)
+        await this.syncLocalListToFirebase(userId, localLists)
+        return localLists.length
     },
 
     async syncLocalChangesWithFirebase (userId, localLists, serverLists, lastSync) {
@@ -192,27 +196,28 @@ export default {
             const user = await this.getFirebaseUser()
             if (user && !user.isAnonymous) {
                 // Retrieve the last sync timestamp
-                const lastSync = await this.getLastSynchonizationTime()
-
-                // Retrieve local and remote lists
-                const localLists = await LocalStorage.getListsForSynchronization(user.id, lastSync)
-                const serverLists = await FirebaseStorage.getListsForSynchronization(user.id, lastSync)
+                const lastSync = await this.getLastSynchonizationTimeForUser()
 
                 // Record synchronization time after fetching data from server
                 const currentSync = (new Date()).getTime()
 
                 // Synchronize new local item to server
-                await this.syncAnonymousLocalListsToFirebase(user.uid)
+                let changesCount = await this.syncAnonymousLocalListsToFirebase(user.uid)
+
+                // Retrieve local and remote lists
+                const localLists = await LocalStorage.getListsForSynchronization(user.id, lastSync)
+                const serverLists = await FirebaseStorage.getListsForSynchronization(user.id, lastSync)
 
                 // Synchronize changed items to server
-                const success = await this.syncLocalChangesWithFirebase(user.uid, localLists, serverLists, lastSync)
+                await this.syncLocalChangesWithFirebase(user.uid, localLists, serverLists, lastSync)
+                changesCount += localLists.length + serverLists.length
 
                 // Record the sync timestamp
-                if (success) {
-                    await this.setLastSynchronizationTime(user.uid, currentSync)
-                }
+                await this.setLastSynchronizationTime(user.uid, currentSync)
 
-                return true
+                if (changesCount > 0) {
+                    return true
+                }
             } else {
                 return false
             }

@@ -1,6 +1,7 @@
 import { createLocalVue } from '@vue/test-utils'
 import VueRouter from 'vue-router'
 import ConstantsPlugin from '@/plugins/constants'
+import FirebaseUserPlugin from '@/plugins/firebaseUser'
 import { strings } from '@/mixins/strings'
 import Constants from '@/util/constants'
 
@@ -12,6 +13,7 @@ import ListItems from '@/views/ListItems.vue'
 const localVue = createLocalVue()
 localVue.use(VueRouter)
 localVue.use(ConstantsPlugin)
+localVue.use(FirebaseUserPlugin)
 localVue.mixin(strings)
 
 const routes = [

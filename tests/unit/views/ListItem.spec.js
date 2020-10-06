@@ -124,7 +124,7 @@ describe('List Item View', () => {
         assert.ok(list instanceof List, 'It is of type List')
         assert.strictEqual(list.id, 654, 'List Id set')
         assert.strictEqual(list.syncStatus, Consts.changeStatus.changed, 'List flagged as changed')
-        assert.strictEqual(list.itemModifiedAt, currentDate.getTime(), 'List flagged as item modified')
+        assert.strictEqual(list.modifiedAt, currentDate.getTime(), 'List flagged as item modified')
 
         const addedListItem = list.listItems[1]
         assert.strictEqual(addedListItem.id, null, 'List item Id is null')
@@ -155,7 +155,7 @@ describe('List Item View', () => {
         assert.ok(list instanceof List, 'It is of type List')
         assert.strictEqual(list.id, 159, 'List Id set')
         assert.strictEqual(list.syncStatus, Consts.changeStatus.changed, 'List flagged as changed')
-        assert.strictEqual(list.itemModifiedAt, currentDate.getTime(), 'List flagged as item modified')
+        assert.strictEqual(list.modifiedAt, currentDate.getTime(), 'List flagged as item modified')
 
         const addedListItem = list.listItems[0]
         assert.strictEqual(addedListItem.id, 123, 'List item Id is null')

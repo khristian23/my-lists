@@ -2,21 +2,11 @@ import storage from '@/storage/IndexedDB/storage-idb'
 import idb from '@/storage/IndexedDB/indexed-db'
 import List from '@/storage/List'
 import ListItem from '@/storage/ListItem'
+import Profile from '@/storage/Profile'
 import Const from '@/util/constants'
 import assert from 'assert'
 import sinon from 'sinon'
-import { generateKeyPair } from 'crypto'
-
-async function assertThrowsAsync(fn, regExp) {
-    let f = () => {};
-    try {
-      await fn();
-    } catch(e) {
-      f = () => {throw e};
-    } finally {
-      assert.throws(f, regExp);
-    }
-  }
+import { assertThrowsAsync } from '../util/helpers'
 
 const USER_ID = 'Christian'
 const LIST_TABLE = 'list'
@@ -45,7 +35,7 @@ describe('Indexed DB Storage', () => {
     it('should not return lists for unknown user', async () => {
         idbGetObjectsByStub
             .withArgs(LIST_TABLE, { userId: 'Unknown' })
-            .returns(Promise.resolve(undefined))
+            .returns(Promise.resolve([]))
 
         const lists = await storage.getLists('Unknown')
         assert.equal(lists.length, 0, 'Wrong number of lists')
@@ -68,7 +58,7 @@ describe('Indexed DB Storage', () => {
     it('should retrieve a list of type List', async () => {
         idbGetObjectsByStub
             .withArgs(LIST_TABLE, { id: 100 })
-            .returns(Promise.resolve({ id: 100, name: 'list1', userId: USER_ID }))
+            .returns(Promise.resolve([{ id: 100, name: 'list1', userId: USER_ID }]))
 
         const list = await storage.getList(USER_ID, 100)
         assert.ok(list instanceof List, 'wrong data type')
@@ -78,7 +68,7 @@ describe('Indexed DB Storage', () => {
     it('should not retrieve a list of a different user', async () => {
         idbGetObjectsByStub
             .withArgs(LIST_TABLE, { id: 200 })
-            .returns(Promise.resolve({ id: 200, name: 'list1', user: 'OtroUsuario'}))
+            .returns(Promise.resolve([{ id: 200, name: 'list1', user: 'OtroUsuario'}]))
 
         await assertThrowsAsync(async () => { await storage.getList(USER_ID, 200) }, /^Error: List ID:200 not found for user Christian$/)
     })
@@ -86,10 +76,10 @@ describe('Indexed DB Storage', () => {
     it('should retriebe a list and without items', async () => {
         idbGetObjectsByStub
             .withArgs(LIST_ITEM_TABLE, { listId: 300 })
-            .returns(Promise.resolve(undefined))
+            .returns(Promise.resolve([]))
         idbGetObjectsByStub 
             .withArgs(LIST_TABLE, { id: 300 })
-            .returns(Promise.resolve({ id: 300, name: 'list1', userId: USER_ID }))
+            .returns(Promise.resolve([{ id: 300, name: 'list1', userId: USER_ID }]))
 
         const list = await storage.getList(USER_ID, 300)
         assert.ok(list instanceof List, 'Wrong List ype')
@@ -106,7 +96,7 @@ describe('Indexed DB Storage', () => {
             }]))
         idbGetObjectsByStub 
             .withArgs(LIST_TABLE, { id: 400 })
-            .returns(Promise.resolve({ id: 300, name: 'list1', userId: USER_ID }))
+            .returns(Promise.resolve([{ id: 300, name: 'list1', userId: USER_ID }]))
 
         const list = await storage.getList(USER_ID, 400)
         assert.ok(list instanceof List, 'Wrong List ype')
@@ -115,8 +105,33 @@ describe('Indexed DB Storage', () => {
         assert.equal(list.listItems[1].name, 'item2', 'Wrong name in List')
     })
 
+    it('should retrieve lists and their list items', async () => {
+        idbGetObjectsByStub
+            .withArgs(LIST_TABLE, { userId: USER_ID })
+            .returns(Promise.resolve([ 
+                { id: 100 },
+                { id: 200 }
+            ]))
+
+        idbGetObjectsByStub
+            .withArgs(LIST_ITEM_TABLE, { listId: 100 })
+            .returns(Promise.resolve([
+                { id: 101 }
+            ]))
+            .withArgs(LIST_ITEM_TABLE, { listId: 200 })
+            .returns(Promise.resolve([
+                { id: 201 },
+                { id: 202 }
+            ]))
+
+        const lists = await storage.getLists(USER_ID)
+        assert.strictEqual(lists.length, 2)
+        assert.strictEqual(lists[0].listItems.length, 1)
+        assert.strictEqual(lists[1].listItems.length, 2)
+    })
+
     it('should throw error when no specified list with ID is found', async () => {
-        idbGetObjectsByStub.withArgs(LIST_TABLE, { id: 999}).returns(Promise.resolve(null))
+        idbGetObjectsByStub.withArgs(LIST_TABLE, { id: 999 }).returns(Promise.resolve([ undefined ]))
         await assertThrowsAsync(async () => { await storage.getList(USER_ID, 999) }, /^Error: List ID:999 not found for user Christian$/)
     })
 
@@ -399,4 +414,92 @@ describe('Indexed DB Storage', () => {
         assert.ok(idbDeleteObjectStub.calledWithExactly(LIST_ITEM_TABLE, { id: 34 }), 'Unsync List Item')
         assert.ok(idbUpdateObjectStub.calledWith(LIST_TABLE, list.toObject()))
     })
+
+    it('should throw an exception if wrong profile type is used', async () => {
+        await assertThrowsAsync(async () => {
+            await storage.saveProfile(USER_ID, {})
+        }, 'Error: Wrong Profile type')
+    })
+
+    it('should create a profile for the first time', async () => {
+        idbGetObjectsByStub.reset()
+        idbGetObjectsByStub.withArgs('profile').returns(Promise.resolve([]))
+        idbAddObjectStub.reset()
+
+        const profile = new Profile({
+            name: 'Christian',
+            email: 'christian@test.com',
+            lastSyncTime: null,
+            userId: USER_ID
+        })
+
+        await storage.saveProfile(USER_ID, profile)
+
+        assert.ok(idbAddObjectStub.calledOnceWith('profile', profile.toObject()))
+    })
+
+    it('should update a profile', async () => {
+        idbGetObjectsByStub.reset()
+        idbGetObjectsByStub.withArgs('profile')
+            .returns(Promise.resolve([{
+                userId: USER_ID
+            }]))
+        idbUpdateObjectStub.reset()
+
+        const profile = new Profile({
+            name: 'Christian',
+            email: 'christian@test.com',
+            lastSyncTime: null,
+            userId: USER_ID
+        })
+
+        await storage.saveProfile(USER_ID, profile)
+
+        assert.ok(idbUpdateObjectStub.calledOnceWith('profile', profile.toObject()))
+    })
+
+    it('should retrieve a profile', async () => {
+        idbGetObjectsByStub.reset()
+        idbGetObjectsByStub.returns([{
+            userId: USER_ID,
+            name: 'Christian'
+        }])
+
+        const profile = await storage.getProfile(USER_ID)
+
+        assert.ok(profile instanceof Profile, 'instance of Profile')
+        assert.strictEqual(profile.name, 'Christian')
+    })
+
+    it('should retrieve an empty profile if one no exists', async () => {
+        idbGetObjectsByStub.reset()
+        idbGetObjectsByStub.returns(Promise.resolve([]))
+
+        const profile = await storage.getProfile('Non-Existent-User')
+
+        assert.ok(!profile)
+    })
+
+    it('should get the local lists for synchronization', async () => {
+        const currentTime = 1000
+
+        const getListsStub = sinon.stub(storage, 'getLists')
+            .returns([
+                new List({ id: 100, modifiedAt: currentTime }),
+                new List({ id: 200 }),
+                new List({ id: 300, modifiedAt: currentTime + 100 }),
+                new List({ id: 400, modifiedAt: currentTime + 1 }),
+                new List({ id: 500, modifiedAt: currentTime - 100 }),
+            ])
+    
+        const actualLists = await storage.getListsForSynchronization(USER_ID, currentTime)
+    
+        assert.strictEqual(actualLists.length, 2)
+        assert.ok([300, 400].every(id => {
+            return actualLists.some(list => list.id === id)
+        }))
+
+        getListsStub.restore()
+    })
+    
 })

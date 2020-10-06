@@ -1,7 +1,7 @@
 import { model } from './db-model'
 
 const DB_NAME = 'my-lists'
-const DB_VERSION = 1
+const DB_VERSION = 2
 let DB
 
 export default {
@@ -22,15 +22,17 @@ export default {
                 resolve(DB)
             }
 
-            request.onupgradeneeded = e => {
+            request.onupgradeneeded = e => { 
                 const db = e.target.result
                 const tables = model.tables
 
-                Object.keys(tables).forEach(t => {
-                    const store = db.createObjectStore(t, tables[t].config)
-                    tables[t].indexes.forEach(i => {
-                        store.createIndex(i, i, { unique: false })
-                    })
+                Object.keys(tables).forEach(tableName => {
+                    if (!db.objectStoreNames.contains(tableName)) {
+                        const store = db.createObjectStore(tableName, tables[tableName].config)
+                        tables[tableName].indexes.forEach(index => {
+                            store.createIndex(index, index, { unique: false })
+                        })
+                    }
                 })
             }
         })
@@ -63,7 +65,7 @@ export default {
         const db = await this.getDb()
 
         if (!options) {
-            return this.getObjects()
+            return this.getObjects(table)
         }
 
         return new Promise(resolve => {
@@ -71,12 +73,15 @@ export default {
             const store = trans.objectStore(table)
 
             const field = Object.keys(options)[0]
-            const value = options[field]
+            let value = options[field]
 
             if (field === store.keyPath) {
-                const request = store.get(parseInt(value, 10))
+                if (store.autoIncrement) {
+                    value = parseInt(value, 10)
+                }
+                const request = store.get(value)
                 request.onsuccess = () => {
-                    resolve(request.result)
+                    resolve([request.result])
                 }
             } else {
                 const range = IDBKeyRange.only(value)
@@ -112,6 +117,9 @@ export default {
                 console.error(r)
                 reject(object)
             }
+        })
+        .catch(e => {
+            throw new Error(`Error getting table ${table} - ${e.message}`)
         })
     },
 

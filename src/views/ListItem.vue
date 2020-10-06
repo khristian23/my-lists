@@ -131,13 +131,13 @@ export default {
             })
             listItem.flagAsNew()
             this.list.addListItem(listItem)
-            this.list.flagAsItemModified()
+            this.list.flagAsModified()
         },
         _processExistentListItem () {
             this.item.name = this.name
             this.item.listId = this.listId
             this.item.flagAsModified()
-            this.list.flagAsItemModified()
+            this.list.flagAsModified()
         },
         onSave () {
             if (this.validate()) {

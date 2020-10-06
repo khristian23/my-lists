@@ -68,18 +68,14 @@ export default {
         },
         onRegister () {
             if (this.validate()) {
-                Firebase.auth()
-                    .createUserWithEmailAndPassword(this.email, this.password)
-                    .then(userCredentials => {
-                        return userCredentials.user.updateProfile({
-                            displayName: this.name
-                        }).then(() => {
-                            this.$refs.form.showToast('User registered')
-                            this.$router.replace({ name: this.$Const.routes.lists })
-                        })
-                    }, error => {
-                        this.error = error.message
-                    })
+                try {
+                    const userCredentials = await this.$auth.createUserWithEmailAndPassword(this.email, this.password)
+                    await this.$auth.update(userCredentials, { displayName: this.name })
+                    this.$refs.form.showToast('User registered')
+                    this.$router.replace({ name: this.$Const.routes.lists })
+                } catch (e) {
+                    this.error = e.message
+                }
             }
         }
     }

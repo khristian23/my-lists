@@ -30,12 +30,14 @@ export const model = {
                 'userId'
             ]
         },
-        sync: {
+        profile: {
             config: {
                 keyPath: 'userId'
             },
             indexes: [
-                'syncTime'
+                'name',
+                'email',
+                'lastSyncTime'
             ]
         }
     }

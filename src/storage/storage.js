@@ -1,3 +1,4 @@
+import Constants from '@/util/constants'
 import indexedDB from './IndexedDB/storage-idb'
 import localStorage from './localStorage/storage-local'
 
@@ -11,7 +12,7 @@ export default {
 
     createLocalAnonymousUser () {
         return {
-            uid: 'Anonymous',
+            uid: Constants.user.anonymous,
             isAnonymous: true
         }
     },

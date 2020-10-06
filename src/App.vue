@@ -17,7 +17,6 @@
 <script>
 import '@ui5/webcomponents-base/dist/features/browsersupport/IE11'
 import Firebase from 'firebase'
-import Firestore from '@/storage/Firestore/firestore' // eslint-disable-line no-unused-vars
 import Storage from '@/storage/storage'
 import Sync from '@/storage/Sync'
 import '@ui5/webcomponents/dist/Toast'
@@ -34,34 +33,20 @@ export default {
             footerMessage: ''
         }
     },
-    async created () {
-        const user = this.listenToFirebaseUserChanges()
-        if (user) {
-            // Cached Firebase user found
-            this.triggerSynchronization()
+    watch: {
+        '$auth.user': {
+            immediate: true,
+            handler (user) {
+                this.onUserChanged(user)
+            }
         }
     },
     methods: {
-        async listenToFirebaseUserChanges () {
-            return new Promise(resolve => {
-                try {
-                    Firebase.auth().onAuthStateChanged(async user => {
-                        if (user) {
-                            // User was authenticated or is anonymous (isAnonimous = true)
-                            // Firebase can pull this info from local IndexedDB is no network found
-                            this.user = user
-                        } else {
-                            // No network found and no local firebase storage
-                            this.setAnonymousUser()
-                        }
-                    })
-                } catch (error) {
-                    this.setAnonymousUser()
-                }
-            })
-        },
-        setAnonymousUser () {
-            this.user = Storage.createLocalAnonymousUser()
+        onUserChanged (user) {
+            this.user = user
+            if (user && user.uid !== this.$Const.user.anonymous) {
+                this.triggerSynchronization()
+            }
         },
         showToast (message) {
             this.toast = message
@@ -74,19 +59,19 @@ export default {
                 this.triggerSynchronization()
             }
         },
-        onLogout () {
-            Firebase.auth().signOut()
-                .then(() => {
-                    this.$router.replace({ name: this.$Const.routes.lists })
-                })
+        async onLogout () {
+            await this.$auth.signOut()
+            this.$router.replace({ name: this.$Const.routes.lists })
         },
         async triggerSynchronization () {
-            const result = await Sync.synchronize()
-            if (!result) {
-                this.setAnonymousUser()
-            } else {
-                const currentRoute = this.$router.currentRoute
-                this.$router.replace({ name: currentRoute.name, params: currentRoute.params })
+            try {
+                const result = await Sync.synchronize()
+                if (result) {
+                    const currentRoute = this.$router.currentRoute
+                    this.$router.replace({ name: currentRoute.name, params: currentRoute.params })
+                }
+            } catch (e) {
+                this.showToast(e.message)
             }
         },
         async onSaveList (list) {

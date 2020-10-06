@@ -12,7 +12,6 @@ class List extends ListObject {
         this._subtype = data.subtype
         this._userId = data.userId
         this._modifiedAt = data.modifiedAt
-        this._itemModifiedAt = data.itemModifiedAt
         this._syncStatus = data.syncStatus
         this._firebaseId = data.firebaseId
         this._listItems = data.listItems || []
@@ -98,14 +97,6 @@ class List extends ListObject {
         return this._modifiedAt
     }
 
-    get itemModifiedAt () {
-        return this._itemModifiedAt
-    }
-
-    set itemModifiedAt (itemModifiedAt) {
-        this._itemModifiedAt = itemModifiedAt
-    }
-
     set userId (userId) {
         this._userId = userId
     }
@@ -133,25 +124,21 @@ class List extends ListObject {
         this._modifiedAt = new Date().getTime()
     }
 
-    flagAsItemModified () {
-        this._syncStatus = Consts.changeStatus.changed
-        this._itemModifiedAt = new Date().getTime()
-    }
-
     flagAsDeleted () {
         this._syncStatus = Consts.changeStatus.deleted
         this._modifiedAt = new Date().getTime()
     }
 
     toFirebaseObject () {
-        const keys = ['id', 'name', 'description', 'priority', 'type', 'subtype', 'modifiedAt',
-            'itemModifiedAt']
-        return this._createObject(keys)
+        const keys = ['id', 'name', 'description', 'priority', 'type', 'subtype', 'modifiedAt']
+        const firebaseObject = this._createObject(keys)
+        firebaseObject.id = this._firebaseId
+        return firebaseObject
     }
 
     toObject () {
         const keys = ['id', 'name', 'description', 'priority', 'type', 'subtype', 'modifiedAt',
-            'itemModifiedAt', 'syncStatus', 'firebaseId', 'userId']
+            'syncStatus', 'firebaseId', 'userId']
         return this._createObject(keys)
     }
 
