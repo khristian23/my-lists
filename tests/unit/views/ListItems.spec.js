@@ -112,7 +112,7 @@ describe('List Items View', () => {
         await wrapper.vm.$nextTick()
 
         const expectedList = getList()
-        expectedList.itemModifiedAt = currentDate.getTime()
+        expectedList.modifiedAt = currentDate.getTime()
         expectedList.syncStatus = Consts.changeStatus.changed
         const expectedListItem = getListItemById(expectedList, 302)
         expectedListItem.modifiedAt = currentDate.getTime()
@@ -139,7 +139,7 @@ describe('List Items View', () => {
         await wrapper.vm.$nextTick()
 
         const expectedList = getList()
-        expectedList.itemModifiedAt = currentDate.getTime()
+        expectedList.modifiedAt = currentDate.getTime()
         expectedList.syncStatus = Consts.changeStatus.changed
         const expectedListItem = getListItemById(expectedList, 301)
         expectedListItem.modifiedAt = currentDate.getTime()
@@ -166,7 +166,7 @@ describe('List Items View', () => {
         await wrapper.vm.$nextTick()
 
         const expectedList = getList()
-        expectedList.itemModifiedAt = currentDate.getTime()
+        expectedList.modifiedAt = currentDate.getTime()
         expectedList.syncStatus = Consts.changeStatus.changed
         const expectedListItem = getListItemById(expectedList, 302)
         expectedListItem.modifiedAt = currentDate.getTime()
@@ -195,7 +195,7 @@ describe('List Items View', () => {
         await wrapper.vm.$nextTick()
 
         const expectedList = getList()
-        expectedList.itemModifiedAt = currentDate.getTime()
+        expectedList.modifiedAt = currentDate.getTime()
         expectedList.syncStatus = Consts.changeStatus.changed
         const expectedListItem = getListItemById(expectedList, 301)
         expectedListItem.modifiedAt = currentDate.getTime()
@@ -224,7 +224,7 @@ describe('List Items View', () => {
         await wrapper.vm.$nextTick()
 
         const expectedList = getList()
-        expectedList.itemModifiedAt = currentDate.getTime()
+        expectedList.modifiedAt = currentDate.getTime()
         expectedList.syncStatus = Consts.changeStatus.changed
         expectedList.listItems.push(new ListItem({
             name: 'Quick create item',
@@ -246,7 +246,8 @@ describe('List Items View', () => {
         })
     })
 
-    it('should be able to reorder the items', async () => {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+    it('should be able to reorder the items', async () => {     
+        getListStub.returns(getList())                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
         saveListStub.reset()
 
         await navigateToListAndWait(350)
@@ -261,7 +262,7 @@ describe('List Items View', () => {
         await wrapper.vm.$nextTick()
 
         const expectedList = getList()
-        expectedList.itemModifiedAt = currentDate.getTime()
+        expectedList.modifiedAt = currentDate.getTime()
         expectedList.syncStatus = Consts.changeStatus.changed
         expectedList.listItems = orderedListItems.map(item => new ListItem(item))
         expectedList.listItems.forEach(item => {

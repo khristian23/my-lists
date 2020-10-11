@@ -14,363 +14,694 @@ import FirebaseStorage from '@/storage/Firestore/storage-fire'
 const USER_ID = 'Christian'
 
 describe('Synchronization', () => {
-  const context = {}
+    const context = {}
 
-  let firebaseSaveListStub
-  let firebaseSaveListItemStub
-  let firebaseGetListStub
+    let firebaseSaveListStub
+    let firebaseSaveListItemStub
+    let firebaseDeleteListStub
+    let firebaseDeleteListItemStub
 
-  let idbGetObjectsByStub
+    let idbGetObjectsByStub
 
-  let localSaveListStub
-  let localSaveListItemStub
+    let localSaveListStub
+    let localSaveListItemStub
+    let localDeleteListStub
+    let localDeleteListItemStub
 
-  before(() => {
-    firebaseSaveListStub = sinon.stub(FirebaseStorage, 'saveList').returns(Promise.resolve(true))
-    firebaseSaveListItemStub = sinon.stub(FirebaseStorage, 'saveListItem').returns(Promise.resolve(true))
-    //firebaseGetListStub = sinon.stub(FirebaseStorage, 'getList').returns(Promise.resolve(true))
+    before(() => {
+        firebaseSaveListStub = sinon.stub(FirebaseStorage, 'saveList').returns(Promise.resolve(true))
+        firebaseSaveListItemStub = sinon.stub(FirebaseStorage, 'saveListItem').returns(Promise.resolve(true))
+        firebaseDeleteListStub = sinon.stub(FirebaseStorage, 'deleteList').returns(Promise.resolve(true))
+        firebaseDeleteListItemStub = sinon.stub(FirebaseStorage, 'deleteListItem').returns(Promise.resolve(true))
 
-    idbGetObjectsByStub = sinon.stub(IndexedDB, 'getObjectsBy').returns([])
+        idbGetObjectsByStub = sinon.stub(IndexedDB, 'getObjectsBy').returns([])
 
-    localSaveListStub = sinon.stub(LocalStorage, 'saveList').returns(Promise.resolve(true))
-    localSaveListItemStub = sinon.stub(LocalStorage, 'saveListItem').returns(Promise.resolve(true))
+        localSaveListStub = sinon.stub(LocalStorage, 'saveList').returns(Promise.resolve(true))
+        localSaveListItemStub = sinon.stub(LocalStorage, 'saveListItem').returns(Promise.resolve(true))
+        localDeleteListStub = sinon.stub(LocalStorage, 'deleteList').returns(Promise.resolve(true))
+        localDeleteListItemStub = sinon.stub(LocalStorage, 'deleteListItem').returns(Promise.resolve(true))
 
-    context.currentDate =  new Date().getTime()
-    
-    for (let i = -6; i <= 5; i++) {
-      let name = 'time' + (i < 0 ? 'Minus' + Math.abs(i) : (i > 0 ? 'Plus' + i : ''))
-      context[name] = (new Date(context.currentDate + 1000*60*60*24*i)).getTime()
-    }
+        context.currentDate = new Date().getTime()
 
-    context.localLists = [
-      new List({
-        id: 1,
-        modifiedAt: context.timeMinus6,
-        itemModifiedAt: context.timePlus1,
-        firebaseId: 101,
-        listItems: [ 
-          new ListItem({
-            id: 11,
-            name: 'local11',
-            modifiedAt: context.timeMinus2,
-            firebaseId: 1101
-          }), 
-          new ListItem({
-            id: 12,
-            modifiedAt: context.timePlus1
-          })
-        ]
-      }),
-      new List({
-        id: 2,
-        modifiedAt: context.timeMinus2,
-        firebaseId: 102
-      }),
-      new List({
-        id: 3,
-        modifiedAt: context.timePlus3,
-      }),
-      new List({
-        id: 4,
-        modifiedAt: context.timePlus4,
-        firebaseId: 104
-      }),
-      new List({
-        id: 5,
-        modifiedAt: context.timeMinus4
-      })
-    ],
+        for (let i = -6; i <= 5; i++) {
+            let name = 'time' + (i < 0 ? 'Minus' + Math.abs(i) : (i > 0 ? 'Plus' + i : ''))
+            context[name] = (new Date(context.currentDate + 1000 * 60 * 60 * 24 * i)).getTime()
+        }
 
-    context.serverLists = [
-      new List({
-        id: 101,
-        modifiedAt: context.timePlus2,
-        listItems: [
-          new ListItem({
-            id: 1101,
-            name: 'server1101',
-            modifiedAt: context.timeMinus2
-          }),
-          new ListItem({
-            id: 1201,
-            modifiedAt: context.timePlus4
-          })
-        ]
-      }),
-      new List({
-        id: 102,
-        modifiedAt: context.timeMinus2
-      }),
-      new List({
-        id: 103,
-        modifiedAt: context.timePlus1
-      }),
-      new List({
-        id: 104,
-        modifiedAt: context.timeMinus4
-      }),
-      new List({
-        id: 105,
-        modifiedAt: context.time
-      })
-    ]
+    })
 
-    let resultLists = sync.computeListsToSync(context.localLists, context.serverLists, context.timeMinus5)
-    context.newLocal = resultLists.newLocal
-    context.newServer = resultLists.newServer
-    context.changedLocal = resultLists.changedLocal
-    context.changedServer = resultLists.changedServer
-  })
+    after(() => {
+        firebaseSaveListStub.restore()
+        firebaseSaveListItemStub.restore()
+        firebaseDeleteListStub.restore()
+        firebaseDeleteListItemStub.restore()
 
-  after(() => {
-    firebaseSaveListStub.restore()
-    firebaseSaveListItemStub.restore()
-    //firebaseGetListStub.restore()
+        idbGetObjectsByStub.restore()
 
-    idbGetObjectsByStub.restore()
+        localSaveListStub.restore()
+        localSaveListItemStub.restore()
+        localDeleteListStub.restore()
+        localDeleteListItemStub.restore()
+    })
 
-    localSaveListStub.restore()
-    localSaveListItemStub.restore()
-  })
+    describe('Helper Sync functions', () => {
+        it('should get the last local synchronization time from existent user', async () => {
+            idbGetObjectsByStub.reset()
 
-  function arrayShouldContainListWithId(lists, id, shouldBeFound) {
-    let result = lists.some(list => list.id === id)
-    if (shouldBeFound) {
-      assert.ok(result, `ID: ${ id } is not found in list`)
-    } else {
-      assert.ok(!result, `ID: ${ id } is found in list`)
-    }
-  }
+            const currentTime = new Date().getTime()
+            idbGetObjectsByStub.returns([{
+                userId: USER_ID,
+                lastSyncTime: currentTime
+            }])
 
-  it('should get the last local synchronization time from existent user', async () => {
-    idbGetObjectsByStub.reset()
+            const lastSync = await sync.getLastSynchonizationTimeForUser(USER_ID)
 
-    const currentTime = new Date().getTime()
-    idbGetObjectsByStub.returns([{ userId: USER_ID, lastSyncTime: currentTime }])
+            assert.strictEqual(lastSync, currentTime)
+        })
 
-    const lastSync = await sync.getLastSynchonizationTimeForUser(USER_ID)
+        it('should get the last local synchronization time from non-existent user', async () => {
+            idbGetObjectsByStub.reset()
+            idbGetObjectsByStub.returns([])
 
-    assert.strictEqual(lastSync, currentTime)
-  })
+            const lastSync = await sync.getLastSynchonizationTimeForUser(USER_ID)
 
-  it('should get the last local synchronization time from non-existent user', async () => {
-    idbGetObjectsByStub.reset()
-    idbGetObjectsByStub.returns([])
+            assert.strictEqual(lastSync, 0)
+        })
 
-    const lastSync = await sync.getLastSynchonizationTimeForUser(USER_ID)
+        it('should set the last local synchronization time for existent user', async () => {
+            const profile = new Profile({
+                userId: USER_ID,
+                lastSyncTime: null
+            })
+            const expectedProfile = profile.toObject()
+            const currentTime = new Date().getTime()
+            expectedProfile.lastSyncTime = currentTime
 
-    assert.strictEqual(lastSync, 0)
-  })
+            const getProfileStub = sinon.stub(LocalStorage, 'getProfile')
+                .returns(Promise.resolve(profile))
+            const saveProfileStub = sinon.stub(LocalStorage, 'saveProfile')
+                .returns(Promise.resolve(true))
 
-  it('should set the last local synchronization time for existent user', async () => {
-    const profile = new Profile({ userId: USER_ID, lastSyncTime: null })
-    const expectedProfile = profile.toObject()
-    const currentTime = new Date().getTime()
-    expectedProfile.lastSyncTime = currentTime
+            await sync.setLastSynchronizationTimeForUser(USER_ID, currentTime)
 
-    const getProfileStub = sinon.stub(LocalStorage, 'getProfile')
-      .returns(Promise.resolve(profile))
-    const saveProfileStub = sinon.stub(LocalStorage, 'saveProfile')
-      .returns(Promise.resolve(true))
+            const actualProfile = saveProfileStub.lastCall.lastArg
+            assert.ok(saveProfileStub.calledOnceWith(USER_ID))
+            assert.deepStrictEqual(actualProfile.toObject(), expectedProfile)
 
-    await sync.setLastSynchronizationTimeForUser(USER_ID, currentTime)
+            getProfileStub.restore()
+            saveProfileStub.restore()
+        })
 
-    const actualProfile = saveProfileStub.lastCall.lastArg
-    assert.ok(saveProfileStub.calledOnceWith(USER_ID))
-    assert.deepStrictEqual(actualProfile.toObject(), expectedProfile)
+        it('should set the last local synchronization time for non-existent user', async () => {
+            const currentTime = new Date().getTime()
+            const expectedProfile = new Profile({
+                userId: USER_ID,
+                lastSyncTime: null
+            }).toObject()
+            expectedProfile.lastSyncTime = currentTime
 
-    getProfileStub.restore()
-    saveProfileStub.restore()
-  })
+            const getProfileStub = sinon.stub(LocalStorage, 'getProfile')
+                .returns(Promise.resolve(undefined))
+            const saveProfileStub = sinon.stub(LocalStorage, 'saveProfile')
+                .returns(Promise.resolve(true))
 
-  it('should set the last local synchronization time for non-existent user', async () => {
-    const currentTime = new Date().getTime()
-    const expectedProfile = new Profile({ userId: USER_ID, lastSyncTime: null }).toObject()
-    expectedProfile.lastSyncTime = currentTime
+            await sync.setLastSynchronizationTimeForUser(USER_ID, currentTime)
 
-    const getProfileStub = sinon.stub(LocalStorage, 'getProfile')
-      .returns(Promise.resolve(undefined))
-    const saveProfileStub = sinon.stub(LocalStorage, 'saveProfile')
-      .returns(Promise.resolve(true))
+            const actualProfile = saveProfileStub.lastCall.lastArg
+            assert.ok(saveProfileStub.calledOnceWith(USER_ID))
+            assert.deepStrictEqual(actualProfile.toObject(), expectedProfile)
 
-    await sync.setLastSynchronizationTimeForUser(USER_ID, currentTime)
+            getProfileStub.restore()
+            saveProfileStub.restore()
+        })
 
-    const actualProfile = saveProfileStub.lastCall.lastArg
-    assert.ok(saveProfileStub.calledOnceWith(USER_ID))
-    assert.deepStrictEqual(actualProfile.toObject(), expectedProfile)
-    
-    getProfileStub.restore()
-    saveProfileStub.restore()
-  })
+        it('should return the number of synchronized anonymous lists', async () => {
+            const lists = [new List({}), new List({}), new List({})]
 
-  it('should return the number of synchronized anonymous lists', async () => {
-    const lists = [new List({}), new List({}), new List({})]
+            const getLocalListsStub = sinon.stub(LocalStorage, 'getLists')
+                .returns(Promise.resolve(lists))
 
-    const getLocalListsStub = sinon.stub(LocalStorage, 'getLists')
-      .returns(Promise.resolve(lists))
+            const count = await sync.syncAnonymousLocalListsToFirebase(USER_ID, lists)
 
-    const count = await sync.syncAnonymousLocalListsToFirebase(USER_ID, lists)
+            assert.ok(count, lists.length)
 
-    assert.ok(count, lists.length)
+            getLocalListsStub.restore()
+        })
 
-    getLocalListsStub.restore()
-  })
-  
-  it('should synchronize new local list to firebase', async () => {
-    const fakeFirebaseId = 1000
+        it('should synchronize new local list to firebase', async () => {
+            const fakeFirebaseId = 1000
 
-    firebaseSaveListStub.reset()
-    firebaseSaveListStub
-      .onFirstCall().returns(Promise.resolve(fakeFirebaseId + 1))
-      .onSecondCall().returns(Promise.resolve(fakeFirebaseId + 2))
+            firebaseSaveListStub.reset()
+            firebaseSaveListStub
+                .onFirstCall().returns(Promise.resolve(fakeFirebaseId + 1))
+                .onSecondCall().returns(Promise.resolve(fakeFirebaseId + 2))
 
-    firebaseSaveListItemStub.reset()
-    firebaseSaveListItemStub
-      .onFirstCall().returns(Promise.resolve(fakeFirebaseId + 100))
-      .onSecondCall().returns(Promise.resolve(fakeFirebaseId + 200))
+            firebaseSaveListItemStub.reset()
+            firebaseSaveListItemStub
+                .onFirstCall().returns(Promise.resolve(fakeFirebaseId + 100))
+                .onSecondCall().returns(Promise.resolve(fakeFirebaseId + 200))
 
-    localSaveListStub.reset()
-    localSaveListItemStub.reset()
+            localSaveListStub.reset()
+            localSaveListItemStub.reset()
 
-    const localLists = [ 
-      new List({ id: 100, 
-        syncStatus: Consts.changeStatus.new,
-        modifiedAt: context.timeMinus2,
-        listItems: [ 
-          new ListItem({ id: 101, syncStatus: Consts.changeStatus.new }),
-          new ListItem({ id: 102, syncStatus: Consts.changeStatus.new })
-        ]
-      }),
-      new List({ id: 200,
-        syncStatus: Consts.changeStatus.new,
-        modifiedAt: context.timeMinus3,
-        listItems: []
-      })
-      /*new List({ id: 200, 
-        syncStatus: Consts.changeStatus.changed,
-        firebaseId: 2000,
-        modifiedAt: context.timeMinus2,
-        itemModifiedAt: context.timeMinus3,
-        localLists: [ 
-          new ListItem({ id: 201, syncStatus: Consts.changeStatus.new }),
-          new ListItem({ id: 202, firebaseId: 20 02, syncStatus: Consts.changeStatus.changed }),
-          new ListItem({ id: 203, firebaseId: 2003, syncStatus: Consts.changeStatus.deleted })
-        ]
-      }),
-      new List({ id: 200, 
-        syncStatus: Consts.changeStatus.deleted,
-        firebaseId: 3000,
-        modifiedAt: context.timeMinus1,
-        localLists: [ 
-          new ListItem({ id: 3001, syncStatus: Consts.changeStatus.deleted }),
-          new ListItem({ id: 3002, firebaseId: 2002, syncStatus: Consts.changeStatus.deleted }),
-          new ListItem({ id: 3003, firebaseId: 2003, syncStatus: Consts.changeStatus.deleted })
-        ]
-      })*/
-    ]
+            const localLists = [
+                new List({
+                    id: 100,
+                    syncStatus: Consts.changeStatus.new,
+                    modifiedAt: context.timeMinus2,
+                    listItems: [
+                        new ListItem({
+                            id: 101,
+                            syncStatus: Consts.changeStatus.new
+                        }),
+                        new ListItem({
+                            id: 102,
+                            syncStatus: Consts.changeStatus.new
+                        })
+                    ]
+                }),
+                new List({
+                    id: 200,
+                    syncStatus: Consts.changeStatus.new,
+                    modifiedAt: context.timeMinus3,
+                    listItems: []
+                })
+            ]
 
-    let onyItems = false
-    await sync.syncLocalListToFirebase(USER_ID, localLists, onyItems)
+            let onyItems = false
+            await sync.syncLocalListToFirebase(USER_ID, localLists, onyItems)
 
-    assert.strictEqual(firebaseSaveListStub.callCount, 2, 'Firebase Save List called twice')
-    assert.strictEqual(firebaseSaveListItemStub.callCount, 2, 'Firebase Save List Item called twice')
-    assert.strictEqual(localSaveListStub.callCount, 2, 'Local Save List must be called twice')
+            assert.ok(firebaseSaveListStub.calledTwice, 'Firebase Save List called twice')
+            assert.ok(firebaseSaveListItemStub.calledTwice, 'Firebase Save List Item called twice')
+            assert.ok(localSaveListStub.calledTwice, 'Local Save List must be called twice')
 
-    assert.strictEqual(firebaseSaveListItemStub.firstCall.args[1], fakeFirebaseId + 1, 'Should take first list firebase Id')
-    assert.strictEqual(firebaseSaveListItemStub.secondCall.args[1], fakeFirebaseId + 1, 'Should take second list firebase Id')
-    
-    const firstLocalList = localSaveListStub.getCalls().filter(call => call.args[1].id === 100)[0].args[1]
-    assert.strictEqual(firstLocalList.firebaseId, fakeFirebaseId + 1)
-    assert.strictEqual(firstLocalList.syncStatus, Consts.changeStatus.none, 'Reset change flag for list')
-    assert.strictEqual(firstLocalList.modifiedAt, context.timeMinus2, 'Modification timestamp kept')
-    assert.ok(firstLocalList.listItems.every(item => item.syncStatus === Consts.changeStatus.none), 'Reset change list Item flag')
-    assert.ok(firstLocalList.listItems.every(item => item.firebaseId > 0), 'Assign firebase Item id')
+            assert.strictEqual(firebaseSaveListItemStub.firstCall.args[1], fakeFirebaseId + 1, 'Should take first list firebase Id')
+            assert.strictEqual(firebaseSaveListItemStub.secondCall.args[1], fakeFirebaseId + 1, 'Should take second list firebase Id')
 
+            const firstLocalList = localSaveListStub.getCalls().filter(call => call.args[1].id === 100)[0].args[1]
+            assert.strictEqual(firstLocalList.firebaseId, fakeFirebaseId + 1)
+            assert.strictEqual(firstLocalList.syncStatus, Consts.changeStatus.none, 'Reset change flag for list')
+            assert.strictEqual(firstLocalList.modifiedAt, context.timeMinus2, 'Modification timestamp kept')
+            assert.ok(firstLocalList.listItems.every(item => item.syncStatus === Consts.changeStatus.none), 'Reset change list Item flag')
+            assert.ok(firstLocalList.listItems.every(item => item.firebaseId > 0), 'Assign firebase Item id')
+        })
 
-    // assert for changed items
-    //    date modified must be stored at server side
-    //    firebase Id should not be changed
-    //    new item should have firebase id assigned
-    //    modified item should not change it firebase id
-    //    deleted item should be deleted
-    //    on success clear the local syncStatus and timestamps
-    //    and save synchronization to local storage 
-    // assert for deleted items
-    //    list and items must be deleted
-    //    on success delete list and items from local storage
-    // Method should return true or false in case of success
-  })
-  // syncLocalListToFirebase
-  // syncFirebaseListToLocal
+        it('should synchronize changed local list to firebase', async () => {
+            firebaseSaveListStub.reset()
+            firebaseSaveListStub
+                .onFirstCall().returns(Promise.resolve(1000))
+                .onSecondCall().returns(Promise.resolve(2000))
 
-  it('should synchronize changed local list to firebase')
+            firebaseSaveListItemStub.reset()
+            firebaseSaveListItemStub
+                .onFirstCall().returns(Promise.resolve(2001))
+                .onSecondCall().returns(Promise.resolve(2002))
+                .onThirdCall().returns(Promise.resolve(2003))
 
-  it('should synchronize deleted local list to firebase')
+            firebaseDeleteListItemStub.reset()
 
-  it('should return false if any local list synchronization error occurred')
+            localSaveListStub.reset()
+            localSaveListItemStub.reset()
+            localDeleteListItemStub.reset()
 
-  it('should synchronize local list to firebase')
+            const localLists = [
+                new List({
+                    id: 100,
+                    syncStatus: Consts.changeStatus.changed,
+                    firebaseId: 1000,
+                    modifiedAt: context.timeMinus2,
+                    listItems: []
+                }),
+                new List({
+                    id: 200,
+                    syncStatus: Consts.changeStatus.changed,
+                    firebaseId: 2000,
+                    modifiedAt: context.timeMinus2,
+                    listItems: [
+                        new ListItem({
+                            id: 201,
+                            syncStatus: Consts.changeStatus.new
+                        }),
+                        new ListItem({
+                            id: 202,
+                            firebaseId: 2002,
+                            syncStatus: Consts.changeStatus.changed
+                        }),
+                        new ListItem({
+                            id: 203,
+                            firebaseId: 2003,
+                            syncStatus: Consts.changeStatus.deleted
+                        })
+                    ]
+                })
+            ]
 
-  it('should detect new local lists', () => {
-    arrayShouldContainListWithId(context.newLocal, 1, false)
-    arrayShouldContainListWithId(context.newLocal, 2, false)
-    arrayShouldContainListWithId(context.newLocal, 3, true)
-    arrayShouldContainListWithId(context.newLocal, 4, false)
-    arrayShouldContainListWithId(context.newLocal, 5, true)
-  })
+            let onyItems = false
+            await sync.syncLocalListToFirebase(USER_ID, localLists, onyItems)
 
-  it('should detect new server side list', () => {
-    arrayShouldContainListWithId(context.newServer, 101, false)
-    arrayShouldContainListWithId(context.newServer, 102, false)
-    arrayShouldContainListWithId(context.newServer, 103, true)
-    arrayShouldContainListWithId(context.newServer, 104, false)
-    arrayShouldContainListWithId(context.newServer, 105, true)
-  })
+            assert.ok(firebaseSaveListStub.calledTwice, 'Firebase Save List called twice')
+            assert.ok(firebaseSaveListItemStub.calledTwice, 'Firebase Save List Item called two times')
+            assert.ok(firebaseDeleteListItemStub.calledOnce, 'Firebase Delete List Item called once')
+            assert.ok(localSaveListStub.calledTwice, 'Local Save List must be called twice')
+            assert.ok(localDeleteListItemStub.calledOnce, 'One list item should be deleted')
 
-  it('should take server side changes made before local list changes', () => {
-    arrayShouldContainListWithId(context.changedServer, 101, true)
-    arrayShouldContainListWithId(context.changedServer, 102, true)
-    arrayShouldContainListWithId(context.changedServer, 104, true)
+            assert.ok(firebaseSaveListItemStub.getCalls().every(call => call.args[1] === 2000), 'Should take second list firebase Id')
 
-    assert.equal(context.changedServer[0].localId, 1)
-    assert.equal(context.changedServer[1].localId, 2)
-    assert.equal(context.changedServer[2].localId, 4)
-  })
+            const firstLocalList = localSaveListStub.getCalls().filter(call => call.args[1].id === 100)[0].args[1]
+            assert.strictEqual(firstLocalList.syncStatus, Consts.changeStatus.none, 'Reset change flag for list')
+            assert.strictEqual(firstLocalList.modifiedAt, context.timeMinus2, 'Modification timestamp kept')
 
-  it('should reject server side changes made after local list changes', () => {
-    arrayShouldContainListWithId(context.changedLocal, 1, true)
-    arrayShouldContainListWithId(context.changedLocal, 2, false)
-    arrayShouldContainListWithId(context.changedLocal, 4, false)
-  })
+            const secondLocalList = localSaveListStub.getCalls().filter(call => call.args[1].id === 200)[0].args[1]
+            assert.strictEqual(secondLocalList.listItems.length, 2, 'Only two list items without deleted item')
+            assert.ok(secondLocalList.listItems.every(item => item.syncStatus === Consts.changeStatus.none), 'Reset change list Item flag')
+            assert.strictEqual(secondLocalList.listItems[0].firebaseId, 2001, 'Assign firebase Item id to new item')
+        })
 
-  it('should consider synchronize list items', () => {
-    let localListItems = context.changedLocal[0].listItems
-    arrayShouldContainListWithId(localListItems, 11, false)
-    arrayShouldContainListWithId(localListItems, 12, true)
+        it('should synchronize deleted local list to firebase', async () => {
+            firebaseSaveListStub.reset()
+            firebaseSaveListItemStub.reset()
+            firebaseDeleteListStub.reset()
+            firebaseDeleteListItemStub.reset()
 
-    let serverListItems = context.changedServer[0].listItems
-    arrayShouldContainListWithId(serverListItems, 1101, true)
-    arrayShouldContainListWithId(serverListItems, 1201, true)
-  })
+            localSaveListStub.reset()
+            localSaveListItemStub.reset()
 
-  it('should synchronize only modified lists', () => {
-    let stubToFirebase = sinon.stub(sync, "syncLocalListToFirebase").returns(Promise.resolve(true))
-    let stubToLocal = sinon.stub(sync, "syncFirebaseListToLocal").returns(Promise.resolve(true))
+            const localLists = [
+                new List({
+                    id: 300,
+                    syncStatus: Consts.changeStatus.deleted,
+                    firebaseId: 3000,
+                    modifiedAt: context.timeMinus1,
+                    listItems: [
+                        new ListItem({
+                            id: 301,
+                            syncStatus: Consts.changeStatus.deleted
+                        }),
+                        new ListItem({
+                            id: 302,
+                            firebaseId: 3002,
+                            syncStatus: Consts.changeStatus.deleted
+                        }),
+                        new ListItem({
+                            id: 303,
+                            firebaseId: 3003,
+                            syncStatus: Consts.changeStatus.changed
+                        })
+                    ]
+                })
+            ]
 
-    sync.syncLocalChangesWithFirebase('user', context.localLists, context.serverLists, context.timeMinus5)
+            let onyItems = false
+            await sync.syncLocalListToFirebase(USER_ID, localLists, onyItems)
 
-    let expectedToFirebase = context.localLists.filter(list => !list.firebaseId)
-    assert.deepEqual(stubToFirebase.getCall(0).args[1], expectedToFirebase, 'Sync To Firebase full lists')
-    assert.deepEqual(stubToFirebase.getCall(1).args[1], [ context.localLists[0] ], 'Sync To Firebase only items')
+            assert.ok(firebaseSaveListStub.notCalled, 'Firebase Save List not called')
+            assert.ok(firebaseSaveListItemStub.notCalled, 'Firebase Save List Item not called')
+            assert.ok(firebaseDeleteListStub.calledOnce, 'Firebase Delete List called once')
+            assert.ok(localSaveListStub.notCalled, 'Local Save List must not be called')
+            assert.ok(localDeleteListStub.calledOnce, 'Delete List must be called once')
+            assert.strictEqual(localDeleteListStub.firstCall.args[1], 300, 'Delete List should be called')
+        })
 
-    let expectedToLocal = [].concat(
-      context.serverLists.filter(list => list.id === 103 || list.id === 105),
-      context.serverLists.filter(list => list.id !== 103 && list.id !== 105),
-    )
-    assert.deepEqual(stubToLocal.getCall(0).args[1], expectedToLocal, 'Sync To Local full lists')
-    assert.deepEqual(stubToLocal.getCall(1).args[1], [], 'Sync To Local only items')
+        it('should synchronize local list to firebase wit only items', async () => {
+            firebaseSaveListStub.reset()
+            firebaseSaveListItemStub.reset()
+            firebaseDeleteListStub.reset()
+            firebaseDeleteListItemStub.reset()
 
-    stubToFirebase.restore()
-    stubToLocal.restore()
-  })
+            localSaveListStub.reset()
+            localSaveListItemStub.reset()
+            localDeleteListStub.reset()
+
+            firebaseSaveListItemStub.returns(Promise.resolve(3001))
+
+            const localLists = [
+                new List({
+                    id: 300,
+                    syncStatus: Consts.changeStatus.changed,
+                    firebaseId: 3000,
+                    modifiedAt: context.timeMinus1,
+                    listItems: [
+                        new ListItem({
+                            id: 301,
+                            syncStatus: Consts.changeStatus.new
+                        }),
+                        new ListItem({
+                            id: 302,
+                            firebaseId: 3002,
+                            syncStatus: Consts.changeStatus.deleted
+                        }),
+                        new ListItem({
+                            id: 303,
+                            firebaseId: 3003,
+                            syncStatus: Consts.changeStatus.changed
+                        })
+                    ]
+                })
+            ]
+
+            await sync.syncLocalListToFirebase(USER_ID, localLists)
+
+            assert.ok(firebaseSaveListStub.calledOnce, 'Firebase Save List not called')
+            assert.ok(firebaseSaveListItemStub.calledTwice, 'Firebase Save List Item called two times')
+            assert.ok(firebaseDeleteListItemStub.calledOnce, 'Firebase Delete List Item called once')
+            assert.ok(localSaveListItemStub.notCalled, 'Local Save List must not be called')
+            assert.ok(localDeleteListStub.notCalled, 'Delete List must not be called')
+            assert.strictEqual(localSaveListStub.lastCall.args[1].listItems[0].firebaseId, 3001, 'Assign firebase Item id to new item')
+
+        })
+
+        it('should synchronize new firebase lists to Local Lists', async () => {
+            localSaveListStub.reset()
+            localSaveListStub
+                .onFirstCall().returns(Promise.resolve(true))
+                .onSecondCall().returns(Promise.resolve(true))
+
+            localSaveListItemStub.reset()
+
+            const currentTime = context.currentTime
+            const serverLists = [
+                new List({
+                    id: 'firebaseId100',
+                    modifiedAt: currentTime
+                }),
+                new List({
+                    id: 'firebaseId200',
+                    modifiedAt: currentTime,
+                    listItems: [
+                        new ListItem({
+                            id: 'firebaseId201',
+                            modifiedAt: currentTime
+                        }),
+                        new ListItem({
+                            id: 'firebaseId202',
+                            modifiedAt: currentTime
+                        })
+                    ]
+                })
+            ]
+
+            await sync.syncFirebaseListToLocal(USER_ID, serverLists)
+
+            assert.ok(localSaveListStub.calledTwice, 'Save two lists')
+
+            const firstCallList = localSaveListStub.firstCall.args[1]
+            assert.ok(firstCallList instanceof List, 'List of type List')
+            assert.ok(!firstCallList.id, 'Set local id must be removed')
+            assert.strictEqual(firstCallList.firebaseId, 'firebaseId100', 'Set firebase id')
+
+            const secondCallList = localSaveListStub.secondCall.args[1]
+            assert.ok(secondCallList instanceof List, 'List of type List')
+            assert.ok(!secondCallList.id, 'Set list local id must be removed')
+            assert.strictEqual(secondCallList.firebaseId, 'firebaseId200', 'Set list firebase id')
+
+            assert.ok(!secondCallList.listItems[0].id, 'Remove list item id for first item')
+            assert.strictEqual(secondCallList.listItems[0].firebaseId, 'firebaseId201', 'Set firebase item is for first item')
+            assert.ok(!secondCallList.listItems[1].id, 'Remove list item id for second item')
+            assert.strictEqual(secondCallList.listItems[1].firebaseId, 'firebaseId202', 'Set firebase item is for first item')
+
+            assert.ok(localSaveListItemStub.notCalled, 'SAve list should save list items')
+        })
+
+        it('should synchronize firebase lists with existent Local Lists', async () => {
+            localSaveListStub.reset()
+            localSaveListStub
+                .onFirstCall().returns(Promise.resolve(true))
+                .onSecondCall().returns(Promise.resolve(true))
+
+            localSaveListItemStub.reset()
+
+            const currentTime = context.currentTime
+            const serverLists = [
+                new List({
+                    id: 'firebaseId100',
+                    localId: 100,
+                    modifiedAt: currentTime
+                }),
+                new List({
+                    id: 'firebaseId200',
+                    localId: 200,
+                    modifiedAt: currentTime,
+                    listItems: [
+                        new ListItem({
+                            id: 'firebaseId201',
+                            localId: 201,
+                            modifiedAt: currentTime
+                        }),
+                        new ListItem({
+                            id: 'firebaseId202',
+                            localId: 202,
+                            modifiedAt: currentTime
+                        })
+                    ]
+                })
+            ]
+
+            await sync.syncFirebaseListToLocal(USER_ID, serverLists)
+
+            assert.ok(localSaveListStub.calledTwice, 'Save two lists')
+
+            const firstCallList = localSaveListStub.firstCall.args[1]
+            assert.ok(firstCallList instanceof List, 'List of type List')
+            assert.strictEqual(firstCallList.id, 100, 'Set local id')
+            assert.strictEqual(firstCallList.firebaseId, 'firebaseId100', 'Set firebase id')
+
+            const secondCallList = localSaveListStub.secondCall.args[1]
+            assert.ok(secondCallList instanceof List, 'List of type List')
+            assert.strictEqual(secondCallList.id, 200, 'Set list local id')
+            assert.strictEqual(secondCallList.firebaseId, 'firebaseId200', 'Set list firebase id')
+
+            assert.strictEqual(secondCallList.listItems[0].id, 201, 'Set list item id for first item')
+            assert.strictEqual(secondCallList.listItems[0].firebaseId, 'firebaseId201', 'Set firebase item is for first item')
+            assert.strictEqual(secondCallList.listItems[1].id, 202, 'Set list item id for second item')
+            assert.strictEqual(secondCallList.listItems[1].firebaseId, 'firebaseId202', 'Set firebase item is for first item')
+
+            assert.ok(localSaveListItemStub.notCalled, 'SAve list should save list items')
+        })
+    })
+
+    describe('Compute Synchronization Per Object Type', () => {
+        function assertTotalNumberOfLists(result, expectedTotal) {
+            const actualTotal = Object.keys(result.lists).reduce((sum, option) => {
+                return sum + result.lists[option].length
+            }, 0)
+            assert.strictEqual(actualTotal, expectedTotal)
+        }
+
+        function assertListIds(list, localId, firebaseId) {
+            assert.strictEqual(list.localId, localId)
+            assert.strictEqual(list.firebaseId, firebaseId)
+        }
+
+        it('should create a structure at the begin of the app', () => {
+            const result = sync.computeListsToSync([], [], context.timeMinus1)
+
+            assert.strictEqual(result.lists.newLocal.length, 0, 'new Local Lists')
+            assert.strictEqual(result.lists.changedLocal.length, 0, 'changed Local Lists')
+            assert.strictEqual(result.lists.deletedLocal.length, 0, 'deleted Local Lists')
+            assert.strictEqual(result.lists.newServer.length, 0, 'new Server Lists')
+            assert.strictEqual(result.lists.changedServer.length, 0, 'changed Server Lists')
+            assert.strictEqual(result.lists.deletedServer.length, 0, 'deleted Server Lists')
+
+            assert.strictEqual(result.items.newLocal.length, 0, 'new Local Lists')
+            assert.strictEqual(result.items.changedLocal.length, 0, 'changed Local Lists')
+            assert.strictEqual(result.items.deletedLocal.length, 0, 'deleted Local Lists')
+            assert.strictEqual(result.items.newServer.length, 0, 'new Server Lists')
+            assert.strictEqual(result.items.changedServer.length, 0, 'changed Server Lists')
+            assert.strictEqual(result.items.deletedServer.length, 0, 'deleted Server Lists')
+
+            assertTotalNumberOfLists(result, 0)
+        })
+
+        it('should detect only new local lists to synchronize', () => {
+            const LocalLists = [
+                new List({ id: 1, modifiedAt: context.timeMinus1, syncStatus: Consts.changeStatus.new }),
+                new List({ id: 3, modifiedAt: context.timeMinus5, syncStatus: Consts.changeStatus.new }),
+                new List({ id: 2, modifiedAt: context.timePlus1, syncStatus: Consts.changeStatus.changed }),
+                new List({ id: 4, modifiedAt: context.timeMinus6, firebaseId: 401 })
+            ]
+            const ServerLists = [
+                new List({ id: 401, modifiedAt: context.timeMinus6 })
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
+
+            assert.strictEqual(result.lists.newLocal.length, 3)
+            assertListIds(result.lists.newLocal[0], 1, undefined)
+            assertListIds(result.lists.newLocal[1], 3, undefined)
+            assertListIds(result.lists.newLocal[2], 2, undefined)
+            assertTotalNumberOfLists(result, 3)
+        })
+
+        it('should detect only new server lists to synchronize', () => {
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timeMinus1 }),
+                new List({ id: 301, modifiedAt: context.timeMinus5 }),
+                new List({ id: 201, modifiedAt: context.timePlus1 })
+            ]
+
+            const result = sync.computeListsToSync([], ServerLists, context.timeMinus5)
+
+            assert.strictEqual(result.lists.newServer.length, 3)
+            assertListIds(result.lists.newServer[0], undefined, 101)
+            assertListIds(result.lists.newServer[1], undefined, 301)
+            assertListIds(result.lists.newServer[2], undefined, 201)
+            assertTotalNumberOfLists(result, 3)
+        })
+
+        it('should detect only new lists to synchronize', () => {
+            const LocalLists = [ 
+                new List({ id: 1, modifiedAt: context.timeMinus2, syncStatus: Consts.changeStatus.changed })
+            ]
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timeMinus1 })
+            ]
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
+
+            assert.strictEqual(result.lists.newLocal.length, 1)
+            assertListIds(result.lists.newLocal[0], 1, undefined)
+            assert.strictEqual(result.lists.newServer.length, 1)
+            assertListIds(result.lists.newServer[0], undefined, 101)
+            assertTotalNumberOfLists(result, 2)
+        })
+
+        it('should detect locally deleted list', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, syncStatus: Consts.changeStatus.deleted, modifiedAt: context.timePlus1 }) 
+            ]
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timeMinus6 })
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
+
+            assert.strictEqual(result.lists.deletedLocal.length, 1)
+            assertListIds(result.lists.deletedLocal[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)
+        })
+
+        it('should detect locally deleted List already deleted list at server side', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, syncStatus: Consts.changeStatus.deleted, modifiedAt: context.timePlus1 }) 
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, [], context.timeMinus5)
+
+            assert.strictEqual(result.lists.deletedLocal.length, 1)
+            assertListIds(result.lists.deletedLocal[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)
+        })
+
+        it('should detect deleted list at server side', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, modifiedAt: context.timeMinus6 }) 
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, [], context.timeMinus3)
+
+            assert.strictEqual(result.lists.deletedServer.length, 1)
+            assertListIds(result.lists.deletedServer[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)
+        })
+
+        it('should detect local changes to unchanged server list', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, syncStatus: Consts.changeStatus.changed, modifiedAt: context.timeMinus1, name: 'test' })
+            ]
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timeMinus6 })
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus2)
+
+            assert.strictEqual(result.lists.changedLocal[0].name, 'test')
+            assertListIds(result.lists.changedLocal[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)
+        })
+
+        it('should detect server changes to unchaned local list', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, modifiedAt: context.timeMinus6 })
+            ]
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timePlus1, name: 'test' })
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus2)
+
+            assert.strictEqual(result.lists.changedServer[0].name, 'test')
+            assertListIds(result.lists.changedServer[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)          
+        })
+
+        it('should take local change when changed before server change', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, modifiedAt: context.timeMinus1, name: 'local', syncStatus: Consts.changeStatus.changed })
+            ]
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timePlus1, name: 'server' })
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus3)
+
+            assert.strictEqual(result.lists.changedLocal[0].name, 'local')
+            assertListIds(result.lists.changedLocal[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)
+        })
+
+        it('should take server change when changed before local change', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, modifiedAt: context.timePlus3, name: 'local', syncStatus: Consts.changeStatus.changed })
+            ]
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timePlus1, name: 'server' })
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus3)
+
+            assert.strictEqual(result.lists.changedServer[0].name, 'server')
+            assertListIds(result.lists.changedServer[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)
+        })
+
+        it('should take local delete over server change even if server change was before', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, modifiedAt: context.timePlus3, syncStatus: Consts.changeStatus.deleted })
+            ]
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timeMinus1 })
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus3)
+
+            assert.strictEqual(result.lists.deletedLocal.length, 1)
+            assertListIds(result.lists.deletedLocal[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)
+        })
+
+        it('should take server delete over local change even if local change was before', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, modifiedAt: context.timePlus3, syncStatus: Consts.changeStatus.changed })
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, [], context.timeMinus3)
+
+            assert.strictEqual(result.lists.deletedServer.length, 1)
+            assertListIds(result.lists.deletedServer[0], 1, 101)
+            assertTotalNumberOfLists(result, 1)
+        })
+
+        it('should not take already synchronized lists', () => {
+          const LocalLists = [
+              new List({ id: 1, firebaseId: 101, modifiedAt: context.timeMinus3 })
+          ]
+          const ServerLists = [
+              new List({ id: 101, modifiedAt: context.timeMinus1 })
+          ]
+
+          const result = sync.computeListsToSync(LocalLists, ServerLists, context.timePlus3)
+
+          assertTotalNumberOfLists(result, 0)
+        })
+    })
 })
+

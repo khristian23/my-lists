@@ -132,12 +132,12 @@ export default {
         }
     },
 
-    async getListsForSynchronization (userId, fromTimestamp) {
-        const lists = await this.getLists(userId)
+    // async getListsForSynchronization (userId, fromTimestamp) {
+    //     const lists = await this.getLists(userId)
 
-        return lists.filter(list => {
-            return (list.modifiedAt && list.modifiedAt > fromTimestamp)
-        })
-    }
+    //     return lists.filter(list => {
+    //         return (list.modifiedAt && list.modifiedAt > fromTimestamp)
+    //     })
+    // }
 
 }

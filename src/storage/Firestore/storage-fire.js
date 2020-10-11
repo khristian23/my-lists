@@ -9,23 +9,6 @@ export default {
     //     return firestore.collection('users').doc(userId)
     // },
 
-    // async getLists (userId) {
-    //     return new Promise(resolve => {
-    //         firestore.collection('users').doc(userId)
-    //             .collection('lists')
-    //             .onSnapshot(snapshots => {
-    //                 const lists = snapshots.docs.map(doc => {
-    //                     return {
-    //                         id: doc.id,
-    //                         name: doc.data().name,
-    //                         description: doc.data().description
-    //                     }
-    //                 })
-    //                 resolve(lists)
-    //             })
-    //     })
-    // },
-
     // getListData (list) {
     //     return {
     //         name: list.name,
@@ -101,28 +84,70 @@ export default {
     //     return firestore.getItems(listId)
     // },
 
-    async getListsForSynchronization (userId, fromTimestamp) {
+    async getLists (userId) {
         const results = []
         const userRef = firestore.collection('users').doc(userId)
-        const listsRef = userRef.collection('lists')
-        const querySnapshots = await listsRef.where('modifiedAt', '>', fromTimestamp).get()
+        const listsCollection = userRef.collection('lists')
+        const listsRef = await listsCollection.get()
 
-        for (const modifiedList of querySnapshots.docs) {
-            const list = new List(modifiedList.data())
-            list.firebaseId = modifiedList.id
+        for (const firebaseList of listsRef.docs) {
+            const list = new List(firebaseList.data())
+            list.id = firebaseList.id
 
-            const items = await listsRef.doc(list.id).collection('items').get()
+            const items = await listsCollection.doc(list.id).collection('items').get()
             for (const item in items.docs) {
                 const listItem = new ListItem(item.data())
-                listItem.firebaseId = item.id
-                listItem.listId = list.firebaseId
+                listItem.id = item.id
+                listItem.listId = list.id
                 list.addListItem(listItem)
             }
-
             results.push(list)
         }
 
         return results
+    },
+
+    // async getListsForSynchronization (userId, fromTimestamp) {
+    //     const results = []
+    //     const userRef = firestore.collection('users').doc(userId)
+    //     const listsRef = userRef.collection('lists')
+    //     const querySnapshots = await listsRef.where('modifiedAt', '>', fromTimestamp).get()
+
+    //     for (const modifiedList of querySnapshots.docs) {
+    //         const list = new List(modifiedList.data())
+    //         list.firebaseId = modifiedList.id
+
+    //         const items = await listsRef.doc(list.id).collection('items').get()
+    //         for (const item in items.docs) {
+    //             const listItem = new ListItem(item.data())
+    //             listItem.firebaseId = item.id
+    //             listItem.listId = list.firebaseId
+    //             list.addListItem(listItem)
+    //         }
+
+    //         results.push(list)
+    //     }
+
+    //     return results
+    // },
+
+    async deleteList (userId, firebaseId) {
+        const userRef = firestore.collection('users').doc(userId)
+        const listRef = userRef.collection('lists').doc(firebaseId)
+        const items = await listRef.collection('items').get()
+
+        for(const item in items.docs) {
+            await item.delete()
+        }
+
+        return listRef.delete()
+    },
+
+    async deleteListItem (userId, firebaseId, firebaseItemId) {
+        const userRef = firestore.collection('users').doc(userId)
+        const listRef = userRef.collection('lists').doc(firebaseId)
+        const itemRef = listRef.collection('items').doc(firebaseItemId)
+        return itemRef.delete()
     }
 
 }

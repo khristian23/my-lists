@@ -29,122 +29,165 @@ export default {
         return LocalStorage.saveProfile(userId, profile)
     },
 
-    computeListsToSync (localLists, serverLists) {
-        // Pair lists by remote ID and local FirebaseId
-        const pairedLists = []
-        const newLocalLists = []
-        let newServerLists = []
-
-        localLists.forEach(changedLocal => {
-            if (!changedLocal.firebaseId) {
-                // New Local List
-                newLocalLists.push(changedLocal)
-            } else {
-                const found = serverLists.some(changedServer => {
-                    if (changedLocal.firebaseId === changedServer.id) {
-                        changedServer.localId = changedLocal.id
-                        pairedLists.push({
-                            local: changedLocal,
-                            server: changedServer
-                        })
-                        return true
-                    }
-                    return false
-                })
-                if (!found) {
-                    newLocalLists.push(changedLocal)
-                }
-            }
-        })
-
-        newServerLists = serverLists.filter(changedServer => {
-            return !pairedLists.some(pairList => pairList.server.id === changedServer.id)
-        })
-
-        const changedLocal = []
-        const changedServer = []
-
-        // Check list Items
-        pairedLists.forEach(pair => {
-            let verifyList = true
-            if (pair.local instanceof List) {
-                const localListItems = pair.local.listItems
-                const serverListItems = pair.server.listItems
-
-                const result = this.computeListsToSync(localListItems, serverListItems)
-
-                if (result.newLocal.length + result.changedLocal.length) {
-                    pair.local.listItems = result.newLocal.concat(result.changedLocal)
-                    changedLocal.push(pair.local)
-                    verifyList = false
-                }
-                if (result.newServer.length + result.changedServer.length) {
-                    pair.server.listItems = result.newServer.concat(result.changedServer)
-                    changedServer.push(pair.server)
-                    verifyList = false
-                }
-            }
-
-            if (verifyList) {
-                if (pair.local.modifiedAt < pair.server.modifiedAt) {
-                    changedLocal.push(pair.local)
-                } else {
-                    changedServer.push(pair.server)
-                }
-            }
-        })
-
+    _createDistribution () {
         return {
-            newLocal: newLocalLists,
-            changedLocal: changedLocal,
-            changedServer: changedServer,
-            newServer: newServerLists
+            newLocal: [],
+            changedLocal: [],
+            deletedLocal: [],
+            newServer: [],
+            changedServer: [],
+            deletedServer: []
         }
     },
 
-    syncLocalListToFirebase (userId, localLists, onlyItems) {
-        return Promise.all(localLists.map(async localList => {
-            if (!onlyItems) {
-                localList.firebaseId  = await FirebaseStorage.saveList(userId, localList)
-                localList.syncStatus = Const.changeStatus.none
+    _distributeListObjectsByModificationDate (distribution, localObject, serverObject, lastSync) {
+        function itWasModifiedAfterLastSync (listObject) {
+            return listObject.modifiedAt >= lastSync
+        }
+
+        if (itWasModifiedAfterLastSync(localObject) && itWasModifiedAfterLastSync(serverObject)) {
+            if (localObject.modifiedAt < serverObject.modifiedAt) {
+                distribution.changedLocal.push(localObject)
             } else {
-                firebaseListId = localList.firebaseId
+                distribution.changedServer.push(serverObject)
             }
+        } else if (itWasModifiedAfterLastSync(localObject)) {
+            distribution.changedLocal.push(localObject)
 
-            await Promise.all(localList.listItems.map(async localItem => {
-                localItem.firebaseId = await FirebaseStorage.saveListItem(userId, localList.firebaseId, localItem)
-                localItem.syncStatus = Const.changeStatus.none
-            }))
+        } else if (itWasModifiedAfterLastSync(serverObject)) {
+            distribution.changedServer.push(serverObject)
+        }
+    },
 
-            return LocalStorage.saveList(userId, localList)
+
+    computeListsToSync (localLists, serverLists, lastSync) {
+        function isFlaggedAsDeleted (listObject) {
+            return listObject.syncStatus === Const.changeStatus.deleted
+        }
+    
+        function isNotSyncedToFirebaseYet (listObject) {
+            return !listObject.firebaseId
+        }
+
+        function findCorrespondentServerObject (localObject) {
+            return serverLists.filter(serverObject => serverObject.id === localObject.firebaseId)[0]
+        }
+
+        function findCorrespondentLocalObject (serverObject) {
+            return localLists.filter(localObject => localObject.firebaseId === serverObject.id)[0]
+        }
+
+        function itWasModifiedAfterLastSync (listObject) {
+            return listObject.modifiedAt >= lastSync
+        }
+
+        const distribution = this._createDistribution()
+
+        localLists.forEach(localObject => {
+            localObject.localId = localObject.id
+
+            if (isFlaggedAsDeleted(localObject)) {
+                distribution.deletedLocal.push(localObject)
+
+            } else if (isNotSyncedToFirebaseYet(localObject)) {
+                distribution.newLocal.push(localObject)
+
+            } else {
+                const serverObject = findCorrespondentServerObject(localObject)
+                if (serverObject) {
+                    serverObject.localId = localObject.id
+                    this._distributeListObjectsByModificationDate(distribution, localObject, serverObject, lastSync)
+                } else {
+                    distribution.deletedServer.push(localObject)
+                }
+            }
+        })
+
+        serverLists.forEach(serverObject => {
+            if (itWasModifiedAfterLastSync(serverObject) &&
+                !findCorrespondentLocalObject(serverObject)) {
+                
+                serverObject.firebaseId = serverObject.id
+                distribution.newServer.push(serverObject)
+            }
+        })
+
+        const result = { lists: {}, items: {} }
+        Object.keys(result).forEach(type => {
+            result[type] = distribution
+        })
+
+
+        return result
+    },
+
+    _syncLocalListItemToFirebase (userId, firebaseListId, localListItems) {
+        return Promise.all(localListItems.map(async localItem => {
+            if (localItem.syncStatus === Const.changeStatus.deleted) {
+                await FirebaseStorage.deleteListItem(userId, firebaseListId, localItem.firebaseId)
+            } else {
+                localItem.firebaseId = await FirebaseStorage.saveListItem(userId, firebaseListId, localItem)
+            }
         }))
     },
 
-    adaptFirebaseObjectToLocalId (object) {
-        object.firebaseId = object.id
-        if (object.localId) {
-            object.id = object.localId
+    async _processLocalListAfterFirebaseSync (userId, localList) {
+        if (localList.syncStatus === Const.changeStatus.deleted) {
+            await LocalStorage.deleteList(userId, localList.id)
         } else {
-            object.id = undefined
+            const itemsToDelete = []
+            const itemsToSave = []
+
+            localList.listItems.forEach(item => {
+                if (item.syncStatus === Const.changeStatus.deleted) {
+                    itemsToDelete.push(item)        
+                } else {
+                    item.syncStatus = Const.changeStatus.none
+                    itemsToSave.push(item)
+                }
+            })
+
+            localList.listItems = itemsToSave
+
+            await Promise.all(itemsToDelete.map(async item => {
+                return LocalStorage.deleteListItem(userId, item.id)
+            }))
+
+            localList.syncStatus = Const.changeStatus.none
+            await LocalStorage.saveList(userId, localList)
         }
     },
 
-    syncFirebaseListToLocal (userId, firebaseLists, onlyItems) {
-        return firebaseLists.map(async firebaseList => {
-            this.adaptFirebaseObjectToLocalId(firebaseList)
+    syncLocalListToFirebase (userId, localLists) {
+        return Promise.all(localLists.map(async localList => {
+            if (localList.syncStatus === Const.changeStatus.deleted) {
+                await FirebaseStorage.deleteList(userId, localList.firebaseId)
 
-            let localListId
-            if (!onlyItems) {
-                localListId = await LocalStorage.saveList(userId, firebaseList)
             } else {
-                localListId = firebaseList.id
+                localList.firebaseId  = await FirebaseStorage.saveList(userId, localList)
+                await this._syncLocalListItemToFirebase(userId, localList.firebaseId, localList.listItems)
             }
+            
+            await this._processLocalListAfterFirebaseSync(userId, localList)
+        }))
+    },
 
-            return Promise.all(firebaseList.listItems.map(firebaseItem => {
-                this.adaptFirebaseObjectToLocalId(firebaseItem)
-                return LocalStorage.saveLocalItem(userId, localListId, firebaseItem)
-            }))
-        })
+    _adaptFirebaseObjectToLocalId (objectToAdapt) {
+        objectToAdapt.firebaseId = objectToAdapt.id
+        if (objectToAdapt.localId) {
+            objectToAdapt.id = objectToAdapt.localId
+        } else {
+            objectToAdapt.id = undefined
+        }
+    },
+
+    async syncFirebaseListToLocal (userId, firebaseLists) {
+        return Promise.all(firebaseLists.map(async firebaseList => {
+            firebaseList.listItems.forEach(item => this._adaptFirebaseObjectToLocalId(item))
+            
+            this._adaptFirebaseObjectToLocalId(firebaseList)
+            await LocalStorage.saveList(userId, firebaseList)
+        }))
     },
 
     async syncAnonymousLocalListsToFirebase (userId) {
@@ -153,42 +196,13 @@ export default {
         return localLists.length
     },
 
-    async syncLocalChangesWithFirebase (userId, localLists, serverLists, lastSync) {
-        const computed = this.computeListsToSync(localLists, serverLists)
-
-        const localOnlyItems = []
-        const localListAndItems = []
-        computed.changedLocal.forEach(list => {
-            if (list.modifiedAt < lastSync) {
-                localOnlyItems.push(list)
-            } else {
-                localListAndItems.push(list)
-            }
-        })
-
-        const serverOnlyItems = []
-        const serverListAndItems = []
-        computed.changedServer.filter(list => {
-            if (list.modifiedAt < lastSync) {
-                serverOnlyItems.push(list)
-            } else {
-                serverListAndItems.push(list)
-            }
-        })
-
-        const allPromises = [].concat(
-            this.syncLocalListToFirebase(userId, computed.newLocal.concat(localListAndItems)),
-            this.syncLocalListToFirebase(userId, localOnlyItems, true),
-            this.syncFirebaseListToLocal(userId, computed.newServer.concat(serverListAndItems)),
-            this.syncFirebaseListToLocal(userId, serverOnlyItems, true)
-        )
-
-        return Promise.all(allPromises).then(results => {
-            return results.reduce((result, value) => {
-                result = result && value
-                return result
-            }, true)
-        })
+    async syncLocalChangesWithFirebase (userId, computed) {
+        return Promise.all([].concat(
+            this.syncLocalListToFirebase(userId, computed.newLocal),
+            this.syncLocalListToFirebase(userId, computed.changedLocal),
+            this.syncFirebaseListToLocal(userId, computed.newServer),
+            this.syncFirebaseListToLocal(userId, computed.changedServer)
+        ))
     },
 
     async synchronize () {
@@ -205,11 +219,12 @@ export default {
                 let changesCount = await this.syncAnonymousLocalListsToFirebase(user.uid)
 
                 // Retrieve local and remote lists
-                const localLists = await LocalStorage.getListsForSynchronization(user.id, lastSync)
-                const serverLists = await FirebaseStorage.getListsForSynchronization(user.id, lastSync)
+                const localLists = await LocalStorage.getLists(user.id)
+                const serverLists = await FirebaseStorage.getLists(user.id)
 
                 // Synchronize changed items to server
-                await this.syncLocalChangesWithFirebase(user.uid, localLists, serverLists, lastSync)
+                const computedLists = this.computeListsToSync(localLists, serverLists, lastSync)
+                await this.syncLocalChangesWithFirebase(user.uid, computedLists)
                 changesCount += localLists.length + serverLists.length
 
                 // Record the sync timestamp

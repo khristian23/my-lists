@@ -148,37 +148,33 @@ export default {
         onItemDone (itemId) {
             const changedItem = this._getListItemById(itemId)
             changedItem.status = this.$Const.itemStatus.done
-            changedItem.syncStatus = this.$Const.changeStatus.changed
+            changedItem.flagAsModified()
             this._saveList()
         },
         onItemUndone (itemId) {
             const changedItem = this._getListItemById(itemId)
             changedItem.status = this.$Const.itemStatus.pending
-            changedItem.syncStatus = this.$Const.changeStatus.changed
+            changedItem.flagAsModified()
             this._saveList()
         },
         onItemDelete (itemId) {
             const changedItem = this._getListItemById(itemId)
-            changedItem.syncStatus = this.$Const.changeStatus.deleted
+            changedItem.flagAsDeleted()
             this._saveList()
         },
         onOrderUpdated (listItems) {
             this.items = listItems
             this.items.forEach(item => {
-                item.syncStatus = this.$Const.changeStatus.changed
+                item.flagAsModified()
             })
             this._saveList()
         },
         _collectListItems () {
             this.list.listItems = this.items
         },
-        _flagListAsChanged () {
-            this.list.syncStatus = this.$Const.changeStatus.changed
-            this.list.itemModifiedAt = new Date().getTime()
-        },
         async _saveList () {
             this._collectListItems()
-            this._flagListAsChanged()
+            this.list.flagAsModified()
             await Storage.saveList(this.user.uid, this.list)
         }
     }

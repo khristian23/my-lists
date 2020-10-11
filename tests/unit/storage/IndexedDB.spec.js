@@ -173,7 +173,6 @@ describe('Indexed DB Storage', () => {
         
         const list = new List({
             name: 'test list with items',
-            itemModifiedAt: new Date().getTime(),
             syncStatus: Const.changeStatus.new,
             modifiedAt: new Date().getTime(),
             listItems: [new ListItem({
@@ -251,7 +250,7 @@ describe('Indexed DB Storage', () => {
             id: 300,
             name: 'test list with items',
             syncStatus: Const.changeStatus.changed,
-            itemModifiedAt: new Date().getTime(),
+            modifiedAt: new Date().getTime(),
             listItems: [new ListItem({
                 id: 301,
                 name: 'item 1',
@@ -478,28 +477,6 @@ describe('Indexed DB Storage', () => {
         const profile = await storage.getProfile('Non-Existent-User')
 
         assert.ok(!profile)
-    })
-
-    it('should get the local lists for synchronization', async () => {
-        const currentTime = 1000
-
-        const getListsStub = sinon.stub(storage, 'getLists')
-            .returns([
-                new List({ id: 100, modifiedAt: currentTime }),
-                new List({ id: 200 }),
-                new List({ id: 300, modifiedAt: currentTime + 100 }),
-                new List({ id: 400, modifiedAt: currentTime + 1 }),
-                new List({ id: 500, modifiedAt: currentTime - 100 }),
-            ])
-    
-        const actualLists = await storage.getListsForSynchronization(USER_ID, currentTime)
-    
-        assert.strictEqual(actualLists.length, 2)
-        assert.ok([300, 400].every(id => {
-            return actualLists.some(list => list.id === id)
-        }))
-
-        getListsStub.restore()
     })
     
 })
