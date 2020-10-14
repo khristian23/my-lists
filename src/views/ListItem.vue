@@ -110,8 +110,8 @@ export default {
                 })
             } else {
                 this.$emit('showError', `List Item Id ${this.itemId} not found`)
-                this.$router.replace({ 
-                    name: this.$Const.routes.listItem, 
+                this.$router.replace({
+                    name: this.$Const.routes.listItem,
                     params: { list: this.listId, id: 'new' }
                 })
             }
@@ -148,7 +148,7 @@ export default {
                 }
                 Storage.saveList(this.user.uid, this.list)
                 this.$emit('showToast', 'List Item saved')
-                this.$router.replace({ name: this.$Const.routes.listItems, params: { id: this.listId }})
+                this.$router.replace({ name: this.$Const.routes.listItems, params: { id: this.listId } })
             }
         }
     }

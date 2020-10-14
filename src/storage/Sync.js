@@ -2,7 +2,6 @@ import LocalStorage from './IndexedDB/storage-idb'
 import FirebaseStorage from './Firestore/storage-fire'
 import Firebase from 'firebase'
 import Const from '@/util/constants'
-import List from '@/storage/List'
 import Profile from './Profile'
 
 export default {
@@ -53,7 +52,6 @@ export default {
             }
         } else if (itWasModifiedAfterLastSync(localObject)) {
             distribution.changedLocal.push(localObject)
-
         } else if (itWasModifiedAfterLastSync(serverObject)) {
             distribution.changedServer.push(serverObject)
         }
@@ -61,7 +59,7 @@ export default {
 
     computeListsToSync (localLists, serverLists, lastSync) {
         const result = { lists: {}, items: {} }
-        
+
         result.lists = this._computeListObjectsDistribution(localLists, serverLists, lastSync)
 
         result.items = this._computeListItemsDistribution(result.lists, localLists, serverLists, lastSync)
@@ -83,9 +81,9 @@ export default {
         }
 
         addListItemsToDistribution('newLocal', Const.changeStatus.new, 'localId')
-        addListItemsToDistribution('newServer', Const.changeStatus.new,'firebaseId')
+        addListItemsToDistribution('newServer', Const.changeStatus.new, 'firebaseId')
         addListItemsToDistribution('deletedLocal', Const.changeStatus.deleted, 'localId')
-        addListItemsToDistribution('deletedServer', Const.changeStatus.deleted,'localId')
+        addListItemsToDistribution('deletedServer', Const.changeStatus.deleted, 'localId')
 
         function findListInArray (array, id) {
             return array.filter(object => object.id === id)[0]
@@ -114,7 +112,7 @@ export default {
         function isFlaggedAsDeleted (listObject) {
             return listObject.syncStatus === Const.changeStatus.deleted
         }
-    
+
         function isNotYetSyncedToFirebase (listObject) {
             return !listObject.firebaseId
         }
@@ -138,10 +136,8 @@ export default {
 
             if (isFlaggedAsDeleted(localObject)) {
                 distribution.deletedLocal.push(localObject)
-
             } else if (isNotYetSyncedToFirebase(localObject)) {
                 distribution.newLocal.push(localObject)
-
             } else {
                 const serverObject = findCorrespondentServerObject(localObject)
                 if (serverObject) {
@@ -156,9 +152,7 @@ export default {
         })
 
         serverObjects.forEach(serverObject => {
-            if (itWasModifiedAfterLastSync(serverObject) &&
-                !findCorrespondentLocalObject(serverObject)) {
-                
+            if (itWasModifiedAfterLastSync(serverObject) && !findCorrespondentLocalObject(serverObject)) {
                 serverObject.firebaseId = serverObject.id
                 distribution.newServer.push(serverObject)
             }
@@ -186,7 +180,7 @@ export default {
 
             localList.listItems.forEach(item => {
                 if (item.syncStatus === Const.changeStatus.deleted) {
-                    itemsToDelete.push(item)        
+                    itemsToDelete.push(item)
                 } else {
                     item.syncStatus = Const.changeStatus.none
                     itemsToSave.push(item)
@@ -208,12 +202,11 @@ export default {
         return Promise.all(localLists.map(async localList => {
             if (localList.syncStatus === Const.changeStatus.deleted) {
                 await FirebaseStorage.deleteList(userId, localList.firebaseId)
-
             } else {
-                localList.firebaseId  = await FirebaseStorage.saveList(userId, localList)
+                localList.firebaseId = await FirebaseStorage.saveList(userId, localList)
                 await this._syncLocalListItemToFirebase(userId, localList.firebaseId, localList.listItems)
             }
-            
+
             await this._processLocalListAfterFirebaseSync(userId, localList)
         }))
     },
@@ -233,7 +226,7 @@ export default {
                 await LocalStorage.deleteList(userId, firebaseList)
             } else {
                 firebaseList.listItems.forEach(item => this._adaptFirebaseObjectToLocalId(item))
-            
+
                 this._adaptFirebaseObjectToLocalId(firebaseList)
                 await LocalStorage.saveList(userId, firebaseList)
             }

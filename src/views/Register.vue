@@ -21,7 +21,6 @@ import PageHeader from '@/components/TheHeader'
 import SimpleForm from '@/components/TheForm'
 import PageFooter from '@/components/TheFooter'
 import FormInput from '@/components/FormInput'
-import Firebase from 'firebase'
 
 export default {
     name: 'register',
@@ -66,7 +65,7 @@ export default {
 
             return !this.error
         },
-        onRegister () {
+        async onRegister () {
             if (this.validate()) {
                 try {
                     const userCredentials = await this.$auth.createUserWithEmailAndPassword(this.email, this.password)

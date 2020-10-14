@@ -98,7 +98,7 @@ export default {
             if (this.$route.name !== this.$Const.routes.list) {
                 return
             }
-            
+
             if (!this.$route.params.id || !this.user) {
                 return
             }

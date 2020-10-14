@@ -3,7 +3,7 @@ import ListObject from './ListObject'
 class List extends ListObject {
     constructor (data) {
         super(data)
-        
+
         this._description = data.description
         this._type = data.type
         this._subtype = data.subtype

@@ -28,7 +28,6 @@ import SimpleForm from '@/components/TheForm'
 import PageFooter from '@/components/TheFooter'
 import FormInput from '@/components/FormInput'
 import Confirmation from '@/components/TheConfirmation'
-import Firebase from 'firebase'
 
 export default {
     name: 'login',
@@ -48,7 +47,7 @@ export default {
     },
     async created () {
         const result = await this.$auth.getRedirectResult()
-        
+
         if (result.user) {
             const sync = await this.getSyncConfirmation()
             this.$emit('login', { sync: sync })

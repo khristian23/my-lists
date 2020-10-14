@@ -13,7 +13,7 @@ class Profile extends ListObject {
         return this._userId
     }
 
-    set userId(userId) {
+    set userId (userId) {
         this._userId = userId
     }
 

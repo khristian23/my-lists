@@ -22,7 +22,7 @@ export default {
                 resolve(DB)
             }
 
-            request.onupgradeneeded = e => { 
+            request.onupgradeneeded = e => {
                 const db = e.target.result
                 const tables = model.tables
 
@@ -117,8 +117,7 @@ export default {
                 console.error(r)
                 reject(object)
             }
-        })
-        .catch(e => {
+        }).catch(e => {
             throw new Error(`Error getting table ${table} - ${e.message}`)
         })
     },

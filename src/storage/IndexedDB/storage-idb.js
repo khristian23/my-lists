@@ -113,7 +113,7 @@ export default {
         if (profiles[0]) {
             return new Profile(profiles[0])
         } else {
-            return undefined    
+            return undefined
         }
     },
 
@@ -130,14 +130,6 @@ export default {
         } else {
             return idb.updateObject('profile', profile.toObject())
         }
-    },
-
-    // async getListsForSynchronization (userId, fromTimestamp) {
-    //     const lists = await this.getLists(userId)
-
-    //     return lists.filter(list => {
-    //         return (list.modifiedAt && list.modifiedAt > fromTimestamp)
-    //     })
-    // }
+    }
 
 }

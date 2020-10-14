@@ -1,5 +1,4 @@
 import Vue from 'vue'
-import EventBus from '@/util/EventBus'
 import Firebase from 'firebase'
 import Firestore from '@/storage/Firestore/firestore' // eslint-disable-line no-unused-vars
 import storage from '@/storage/storage'
