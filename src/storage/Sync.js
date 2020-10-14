@@ -59,22 +59,72 @@ export default {
         }
     },
 
-
     computeListsToSync (localLists, serverLists, lastSync) {
+        const result = { lists: {}, items: {} }
+        
+        result.lists = this._computeListObjectsDistribution(localLists, serverLists, lastSync)
+
+        result.items = this._computeListItemsDistribution(result.lists, localLists, serverLists, lastSync)
+
+        return result
+    },
+
+    _computeListItemsDistribution (listResult, localObjects, serverObjects, lastSync) {
+        const result = this._createDistribution()
+
+        function addListItemsToDistribution (listType, status, idToUpdate) {
+            listResult[listType].forEach(list => {
+                list.listItems.forEach(item => {
+                    item.syncStatus = status
+                    item[idToUpdate] = item.id
+                })
+                result[listType].push(...list.listItems)
+            })
+        }
+
+        addListItemsToDistribution('newLocal', Const.changeStatus.new, 'localId')
+        addListItemsToDistribution('newServer', Const.changeStatus.new,'firebaseId')
+        addListItemsToDistribution('deletedLocal', Const.changeStatus.deleted, 'localId')
+        addListItemsToDistribution('deletedServer', Const.changeStatus.deleted,'localId')
+
+        function findListInArray (array, id) {
+            return array.filter(object => object.id === id)[0]
+        }
+
+        function addItemsDistributionToResult (itemsDistribution) {
+            Object.keys(result).forEach(type => {
+                result[type].push(...itemsDistribution[type])
+            })
+        }
+
+        const allLists = listResult.changedLocal.concat(listResult.changedServer)
+        allLists.forEach(changedList => {
+            const localList = findListInArray(localObjects, changedList.localId)
+            const serverList = findListInArray(serverObjects, changedList.firebaseId)
+
+            const itemsDistribution = this._computeListObjectsDistribution(localList.listItems, serverList.listItems, lastSync)
+
+            addItemsDistributionToResult(itemsDistribution)
+        })
+
+        return result
+    },
+
+    _computeListObjectsDistribution (localObjects, serverObjects, lastSync) {
         function isFlaggedAsDeleted (listObject) {
             return listObject.syncStatus === Const.changeStatus.deleted
         }
     
-        function isNotSyncedToFirebaseYet (listObject) {
+        function isNotYetSyncedToFirebase (listObject) {
             return !listObject.firebaseId
         }
 
         function findCorrespondentServerObject (localObject) {
-            return serverLists.filter(serverObject => serverObject.id === localObject.firebaseId)[0]
+            return serverObjects.filter(serverObject => serverObject.id === localObject.firebaseId)[0]
         }
 
         function findCorrespondentLocalObject (serverObject) {
-            return localLists.filter(localObject => localObject.firebaseId === serverObject.id)[0]
+            return localObjects.filter(localObject => localObject.firebaseId === serverObject.id)[0]
         }
 
         function itWasModifiedAfterLastSync (listObject) {
@@ -83,27 +133,29 @@ export default {
 
         const distribution = this._createDistribution()
 
-        localLists.forEach(localObject => {
+        localObjects.forEach(localObject => {
             localObject.localId = localObject.id
 
             if (isFlaggedAsDeleted(localObject)) {
                 distribution.deletedLocal.push(localObject)
 
-            } else if (isNotSyncedToFirebaseYet(localObject)) {
+            } else if (isNotYetSyncedToFirebase(localObject)) {
                 distribution.newLocal.push(localObject)
 
             } else {
                 const serverObject = findCorrespondentServerObject(localObject)
                 if (serverObject) {
                     serverObject.localId = localObject.id
+                    serverObject.firebaseId = serverObject.id
                     this._distributeListObjectsByModificationDate(distribution, localObject, serverObject, lastSync)
                 } else {
+                    localObject.syncStatus = Const.changeStatus.deleted
                     distribution.deletedServer.push(localObject)
                 }
             }
         })
 
-        serverLists.forEach(serverObject => {
+        serverObjects.forEach(serverObject => {
             if (itWasModifiedAfterLastSync(serverObject) &&
                 !findCorrespondentLocalObject(serverObject)) {
                 
@@ -112,13 +164,7 @@ export default {
             }
         })
 
-        const result = { lists: {}, items: {} }
-        Object.keys(result).forEach(type => {
-            result[type] = distribution
-        })
-
-
-        return result
+        return distribution
     },
 
     _syncLocalListItemToFirebase (userId, firebaseListId, localListItems) {
@@ -183,10 +229,14 @@ export default {
 
     async syncFirebaseListToLocal (userId, firebaseLists) {
         return Promise.all(firebaseLists.map(async firebaseList => {
-            firebaseList.listItems.forEach(item => this._adaptFirebaseObjectToLocalId(item))
+            if (firebaseList.syncStatus === Const.changeStatus.deleted) {
+                await LocalStorage.deleteList(userId, firebaseList)
+            } else {
+                firebaseList.listItems.forEach(item => this._adaptFirebaseObjectToLocalId(item))
             
-            this._adaptFirebaseObjectToLocalId(firebaseList)
-            await LocalStorage.saveList(userId, firebaseList)
+                this._adaptFirebaseObjectToLocalId(firebaseList)
+                await LocalStorage.saveList(userId, firebaseList)
+            }
         }))
     },
 
@@ -197,11 +247,52 @@ export default {
     },
 
     async syncLocalChangesWithFirebase (userId, computed) {
+        function concatenateListObjects (side, type) {
+            return computed[type]['new' + side].concat(
+                ...computed[type]['changed' + side],
+                ...computed[type]['deleted' + side]
+            )
+        }
+
+        function concatencateLocalListObjects (type) {
+            return concatenateListObjects('Local', type)
+        }
+
+        function concatencateServerListObjects (type) {
+            return concatenateListObjects('Server', type)
+        }
+
+        function addListItemsToList (lists, listItems) {
+            lists.forEach(list => {
+                list.listItems = listItems.filter(listItem => listItem.listId === list.id)
+            })
+        }
+
+        function addFoundServerDeletedItemsToLocalLists (localLists) {
+            computed.items.deletedServer.forEach(deletedItem => {
+                localLists.some(list => {
+                    if (list.id === deletedItem.listId) {
+                        list.listItems.push(deletedItem)
+                        return true
+                    }
+                    return false
+                })
+            })
+        }
+
+        const localLists = concatencateLocalListObjects('lists')
+        const localListItems = concatencateLocalListObjects('items')
+        const serverLists = concatencateServerListObjects('lists')
+        const serverListItems = concatencateServerListObjects('items')
+
+        addListItemsToList(localLists, localListItems)
+        addListItemsToList(serverLists, serverListItems)
+
+        addFoundServerDeletedItemsToLocalLists(localLists)
+
         return Promise.all([].concat(
-            this.syncLocalListToFirebase(userId, computed.newLocal),
-            this.syncLocalListToFirebase(userId, computed.changedLocal),
-            this.syncFirebaseListToLocal(userId, computed.newServer),
-            this.syncFirebaseListToLocal(userId, computed.changedServer)
+            this.syncLocalListToFirebase(userId, localLists),
+            this.syncFirebaseListToLocal(userId, serverLists)
         ))
     },
 

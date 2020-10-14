@@ -477,17 +477,183 @@ describe('Synchronization', () => {
 
             assert.ok(localSaveListItemStub.notCalled, 'SAve list should save list items')
         })
+
+        it('should synchronize deleted firebase lists with Local Lists', async () => {
+          localSaveListStub.reset()
+          localSaveListStub
+              .onFirstCall().returns(Promise.resolve(true))
+              .onSecondCall().returns(Promise.resolve(true))
+
+          localSaveListItemStub.reset()
+
+          const currentTime = context.currentTime
+          const serverLists = [
+              new List({
+                  id: 100,
+                  localId: 100,
+                  firebaseId: 'firebaseId100',
+                  syncStatus: Consts.changeStatus.deleted,
+                  modifiedAt: currentTime
+              }),
+              new List({
+                  id: 200,
+                  localId: 200,
+                  firebaseId: 'firebaseId200',
+                  syncStatus: Consts.changeStatus.deleted,
+                  modifiedAt: currentTime,
+                  listItems: [
+                      new ListItem({
+                          id: 201,
+                          localId: 201,
+                          firebaseId: 'firebaseId201',
+                          syncStatus: Consts.changeStatus.deleted,
+                          modifiedAt: currentTime
+                      }),
+                      new ListItem({
+                          id: 202,
+                          firebaseId: 'firebaseId202',
+                          localId: 202,
+                          syncStatus: Consts.changeStatus.deleted,
+                          modifiedAt: currentTime
+                      })
+                  ]
+              })
+          ]
+
+          await sync.syncFirebaseListToLocal(USER_ID, serverLists)
+
+          assert.ok(localDeleteListStub.calledTwice, 'Delete two lists')
+
+          const firstCallList = localDeleteListStub.firstCall.args[1]
+          assert.ok(firstCallList instanceof List, 'List of type List')
+          assert.strictEqual(firstCallList.id, 100, 'Set local id')
+          assert.strictEqual(firstCallList.firebaseId, 'firebaseId100', 'Set firebase id')
+
+          const secondCallList = localDeleteListStub.secondCall.args[1]
+          assert.ok(secondCallList instanceof List, 'List of type List')
+          assert.strictEqual(secondCallList.id, 200, 'Set list local id')
+          assert.strictEqual(secondCallList.firebaseId, 'firebaseId200', 'Set list firebase id')
+
+          assert.strictEqual(secondCallList.listItems[0].id, 201, 'Set list item id for first item')
+          assert.strictEqual(secondCallList.listItems[0].firebaseId, 'firebaseId201', 'Set firebase item is for first item')
+          assert.strictEqual(secondCallList.listItems[1].id, 202, 'Set list item id for second item')
+          assert.strictEqual(secondCallList.listItems[1].firebaseId, 'firebaseId202', 'Set firebase item is for first item')
+
+          assert.ok(localSaveListItemStub.notCalled, 'SAve list should save list items')
+      })
+
+        it('should perform call to store sync computation', async () => {
+            function findInArray(array, id) {
+                return array.filter(object => object.id === id)[0]
+            }
+
+            const syncLocalListToFirebaseStub = sinon.stub(sync, 'syncLocalListToFirebase')
+            const syncFirebaseListToLocalStub = sinon.stub(sync, 'syncFirebaseListToLocal')
+
+            syncLocalListToFirebaseStub.returns(Promise.resolve(true))
+            syncFirebaseListToLocalStub.returns(Promise.resolve(true))
+
+            const computed = {
+                lists: {
+                    newLocal: [
+                        new List({ id: 1 }),
+                        new List({ id: 5 })
+                    ],
+                    changedLocal: [
+                        new List({ id: 2, localId: 2, firebaseId: 200, listItems: [
+                            new ListItem({ id: -20 }),
+                            new ListItem({ id: -21 }),
+                            new ListItem({ id: -22 }),
+                            new ListItem({ id: -23 })
+                        ]})
+                    ],
+                    deletedLocal: [
+                        new List({ id: 4, localId: 4, firebaseId: 400 })
+                    ],
+                    newServer: [
+                        new List({ id: 100 })
+                    ],
+                    changedServer: [
+                        new List({ id: 200, localId: 2, firebaseId: 200, listItems: [
+                            new ListItem({ id: 200 }),
+                            new ListItem({ id: 201 }),
+                            new ListItem({ id: 202 }),
+                            new ListItem({ id: 203 })
+                        ]})
+                    ],
+                    deletedServer: [
+                        new List({ id: 3, localId: 3, firebaseId: 300 })
+                    ]
+                },
+                items: {
+                    newLocal: [
+                        new ListItem({ id: 10, listId: 1 }),
+                        new ListItem({ id: 11, listId: 1 }),
+                        new ListItem({ id: 23, listId: 2 })
+                    ],
+                    changedLocal: [
+                        new ListItem({ id: 20, listId: 2})
+                    ],
+                    deletedLocal: [
+                        new ListItem({ id: 40, listId: 4 }),
+                        new ListItem({ id: 41, listId: 4 }),
+                        new ListItem({ id: 42, listId: 4 }),
+                    ],
+                    newServer: [
+                        new ListItem({ id: 101, listId: 100 }),
+                        new ListItem({ id: 102, listId: 100 }),
+                        new ListItem({ id: 202, listId: 200 })
+                    ],
+                    changedServer: [
+                        new ListItem({ id: 201, listId: 200 })
+                    ],
+                    deletedServer: [
+                        new ListItem({ id: 30, listId: 3 }),
+                        new ListItem({ id: 22, listId: 2 })
+                    ]
+                }
+            }
+
+            await sync.syncLocalChangesWithFirebase(USER_ID, computed)
+
+            assert.ok(syncLocalListToFirebaseStub.calledOnce, 'Local to Firebase not called or more than once')
+            assert.ok(syncFirebaseListToLocalStub.calledOnce, 'Firebase to Local not called or more than once')
+            
+            const localLists = syncLocalListToFirebaseStub.firstCall.args[1]
+            assert.strictEqual(localLists.length, 4)
+            assert.strictEqual(findInArray(localLists, 1).listItems.length, 2, 'Items for List 1')
+            assert.strictEqual(findInArray(localLists, 2).listItems.length, 3) //, 'Items for List 2')
+            assert.strictEqual(findInArray(localLists, 4).listItems.length, 3, 'Items for List 4')
+            assert.strictEqual(findInArray(localLists, 5).listItems.length, 0, 'Items for List 5')
+
+            const serverLists = syncFirebaseListToLocalStub.firstCall.args[1]
+            assert.strictEqual(serverLists.length, 3)
+            assert.strictEqual(findInArray(serverLists, 100).listItems.length, 2, 'Items for List 100')
+            assert.strictEqual(findInArray(serverLists, 200).listItems.length, 2, 'Items for List 200')
+            assert.strictEqual(findInArray(serverLists, 3).listItems.length, 1, 'Items for List 3')
+
+            syncLocalListToFirebaseStub.restore()
+            syncFirebaseListToLocalStub.restore()
+        })
     })
 
     describe('Compute Synchronization Per Object Type', () => {
-        function assertTotalNumberOfLists(result, expectedTotal) {
-            const actualTotal = Object.keys(result.lists).reduce((sum, option) => {
-                return sum + result.lists[option].length
+        function _assertTotalNumberOfObjects(type, result, expectedTotal) {
+            const actualTotal = Object.keys(result[type]).reduce((sum, option) => {
+                return sum + result[type][option].length
             }, 0)
             assert.strictEqual(actualTotal, expectedTotal)
         }
 
-        function assertListIds(list, localId, firebaseId) {
+        function assertTotalNumberOfLists(result, expectedTotal) {
+            _assertTotalNumberOfObjects('lists', result, expectedTotal)
+        }
+
+        function assertTotalNumberOfListItems(result, expectedTotal) {
+            _assertTotalNumberOfObjects('items', result, expectedTotal)
+        }
+
+        function assertListObjectIds(list, localId, firebaseId) {
             assert.strictEqual(list.localId, localId)
             assert.strictEqual(list.firebaseId, firebaseId)
         }
@@ -526,9 +692,9 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
 
             assert.strictEqual(result.lists.newLocal.length, 3)
-            assertListIds(result.lists.newLocal[0], 1, undefined)
-            assertListIds(result.lists.newLocal[1], 3, undefined)
-            assertListIds(result.lists.newLocal[2], 2, undefined)
+            assertListObjectIds(result.lists.newLocal[0], 1, undefined)
+            assertListObjectIds(result.lists.newLocal[1], 3, undefined)
+            assertListObjectIds(result.lists.newLocal[2], 2, undefined)
             assertTotalNumberOfLists(result, 3)
         })
 
@@ -542,9 +708,9 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync([], ServerLists, context.timeMinus5)
 
             assert.strictEqual(result.lists.newServer.length, 3)
-            assertListIds(result.lists.newServer[0], undefined, 101)
-            assertListIds(result.lists.newServer[1], undefined, 301)
-            assertListIds(result.lists.newServer[2], undefined, 201)
+            assertListObjectIds(result.lists.newServer[0], undefined, 101)
+            assertListObjectIds(result.lists.newServer[1], undefined, 301)
+            assertListObjectIds(result.lists.newServer[2], undefined, 201)
             assertTotalNumberOfLists(result, 3)
         })
 
@@ -558,9 +724,9 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
 
             assert.strictEqual(result.lists.newLocal.length, 1)
-            assertListIds(result.lists.newLocal[0], 1, undefined)
+            assertListObjectIds(result.lists.newLocal[0], 1, undefined)
             assert.strictEqual(result.lists.newServer.length, 1)
-            assertListIds(result.lists.newServer[0], undefined, 101)
+            assertListObjectIds(result.lists.newServer[0], undefined, 101)
             assertTotalNumberOfLists(result, 2)
         })
 
@@ -575,7 +741,8 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
 
             assert.strictEqual(result.lists.deletedLocal.length, 1)
-            assertListIds(result.lists.deletedLocal[0], 1, 101)
+            assertListObjectIds(result.lists.deletedLocal[0], 1, 101)
+            assert.strictEqual(result.lists.deletedLocal[0].syncStatus, Consts.changeStatus.deleted)
             assertTotalNumberOfLists(result, 1)
         })
 
@@ -587,7 +754,8 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, [], context.timeMinus5)
 
             assert.strictEqual(result.lists.deletedLocal.length, 1)
-            assertListIds(result.lists.deletedLocal[0], 1, 101)
+            assertListObjectIds(result.lists.deletedLocal[0], 1, 101)
+            assert.strictEqual(result.lists.deletedLocal[0].syncStatus, Consts.changeStatus.deleted)
             assertTotalNumberOfLists(result, 1)
         })
 
@@ -599,7 +767,8 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, [], context.timeMinus3)
 
             assert.strictEqual(result.lists.deletedServer.length, 1)
-            assertListIds(result.lists.deletedServer[0], 1, 101)
+            assertListObjectIds(result.lists.deletedServer[0], 1, 101)
+            assert.strictEqual(result.lists.deletedServer[0].syncStatus, Consts.changeStatus.deleted)
             assertTotalNumberOfLists(result, 1)
         })
 
@@ -614,11 +783,11 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus2)
 
             assert.strictEqual(result.lists.changedLocal[0].name, 'test')
-            assertListIds(result.lists.changedLocal[0], 1, 101)
+            assertListObjectIds(result.lists.changedLocal[0], 1, 101)
             assertTotalNumberOfLists(result, 1)
         })
 
-        it('should detect server changes to unchaned local list', () => {
+        it('should detect server changes to unchanged local list', () => {
             const LocalLists = [
                 new List({ id: 1, firebaseId: 101, modifiedAt: context.timeMinus6 })
             ]
@@ -629,7 +798,7 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus2)
 
             assert.strictEqual(result.lists.changedServer[0].name, 'test')
-            assertListIds(result.lists.changedServer[0], 1, 101)
+            assertListObjectIds(result.lists.changedServer[0], 1, 101)
             assertTotalNumberOfLists(result, 1)          
         })
 
@@ -644,7 +813,7 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus3)
 
             assert.strictEqual(result.lists.changedLocal[0].name, 'local')
-            assertListIds(result.lists.changedLocal[0], 1, 101)
+            assertListObjectIds(result.lists.changedLocal[0], 1, 101)
             assertTotalNumberOfLists(result, 1)
         })
 
@@ -659,7 +828,7 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus3)
 
             assert.strictEqual(result.lists.changedServer[0].name, 'server')
-            assertListIds(result.lists.changedServer[0], 1, 101)
+            assertListObjectIds(result.lists.changedServer[0], 1, 101)
             assertTotalNumberOfLists(result, 1)
         })
 
@@ -674,7 +843,8 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus3)
 
             assert.strictEqual(result.lists.deletedLocal.length, 1)
-            assertListIds(result.lists.deletedLocal[0], 1, 101)
+            assertListObjectIds(result.lists.deletedLocal[0], 1, 101)
+            assert.strictEqual(result.lists.deletedLocal[0].syncStatus, Consts.changeStatus.deleted)
             assertTotalNumberOfLists(result, 1)
         })
 
@@ -686,22 +856,207 @@ describe('Synchronization', () => {
             const result = sync.computeListsToSync(LocalLists, [], context.timeMinus3)
 
             assert.strictEqual(result.lists.deletedServer.length, 1)
-            assertListIds(result.lists.deletedServer[0], 1, 101)
+            assertListObjectIds(result.lists.deletedServer[0], 1, 101)
+            assert.strictEqual(result.lists.deletedServer[0].syncStatus, Consts.changeStatus.deleted)
             assertTotalNumberOfLists(result, 1)
         })
 
         it('should not take already synchronized lists', () => {
-          const LocalLists = [
-              new List({ id: 1, firebaseId: 101, modifiedAt: context.timeMinus3 })
-          ]
-          const ServerLists = [
-              new List({ id: 101, modifiedAt: context.timeMinus1 })
-          ]
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 101, modifiedAt: context.timeMinus3 })
+            ]
+            const ServerLists = [
+                new List({ id: 101, modifiedAt: context.timeMinus1 })
+            ]
 
-          const result = sync.computeListsToSync(LocalLists, ServerLists, context.timePlus3)
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timePlus3)
 
-          assertTotalNumberOfLists(result, 0)
+            assertTotalNumberOfLists(result, 0)
         })
+        
+        it('should add new local list items from new Lists', () => {
+            const LocalLists = [
+                new List({ id: 1, syncStatus: Consts.changeStatus.new, listItems: [
+                    new ListItem({ id: 11, syncStatus: Consts.changeStatus.new, modifiedAt: context.timeMinus2 }),
+                    new ListItem({ id: 12, syncStatus: Consts.changeStatus.changed, modifiedAt: context.timeMinus3 })
+                ]}),
+                new List({ id: 2, syncStatus: Consts.changeStatus.changed, listItems: [
+                    new ListItem({ id: 21, syncStatus: Consts.changeStatus.new, modifiedAt: context.timeMinus2 }),
+                    new ListItem({ id: 22, syncStatus: Consts.changeStatus.changed, modifiedAt: context.timeMinus3 })
+                ]}),
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, [], context.timeMinus4)
+
+            assert.strictEqual(result.items.newLocal.length, 4)
+            assertListObjectIds(result.items.newLocal[0], 11, undefined)
+            assertListObjectIds(result.items.newLocal[3], 22, undefined)
+            assertTotalNumberOfListItems(result, 4)
+        })
+
+        it('should add deleted local list items from deleted lists', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 100, syncStatus: Consts.changeStatus.deleted, listItems: [
+                    new ListItem({ id: 11, syncStatus: Consts.changeStatus.new, modifiedAt: context.timeMinus2 })
+                ]}),
+                new List({ id: 2, firebaseId: 200, syncStatus: Consts.changeStatus.deleted, listItems: [
+                    new ListItem({ id: 21, firebaseId: 200, syncStatus: Consts.changeStatus.deleted, modifiedAt: context.timeMinus3 })
+                ]})
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, [], context.timeMinus4)
+
+            assert.strictEqual(result.items.deletedLocal.length, 2)
+            assertListObjectIds(result.items.deletedLocal[0], 11, undefined)
+            assertListObjectIds(result.items.deletedLocal[1], 21, 200)
+            assert.strictEqual(result.items.deletedLocal[0].syncStatus, Consts.changeStatus.deleted)
+            assert.strictEqual(result.items.deletedLocal[1].syncStatus, Consts.changeStatus.deleted)
+            assertTotalNumberOfListItems(result, 2)
+        })
+
+        it('should add new server list items from new lists', () => {
+            const ServerLists = [
+                new List({ id: 100, modifiedAt: context.timeMinus3, listItems: [
+                    new ListItem({ id: 101, modifiedAt: context.timeMinus2 })
+                ]}),
+                new List({ id: 200, modifiedAt: context.timePlus1, listItems: [
+                    new ListItem({ id: 201, modifiedAt: context.timePlus1 })
+                ]})
+            ]
+
+            const result = sync.computeListsToSync([], ServerLists, context.timeMinus4)
+
+            assert.strictEqual(result.items.newServer.length, 2)
+            assertListObjectIds(result.items.newServer[0], undefined, 101)
+            assertListObjectIds(result.items.newServer[1], undefined, 201)
+            assertTotalNumberOfListItems(result, 2)
+        })
+
+        it('should add deleted server list items from deleted lists', () => {
+            const LocalLists = [
+                new List({ id: 1, firebaseId: 100, listItems: [
+                    new ListItem({ id: 11, firebaseId: 101 })
+                ]}),
+                new List({ id: 2, firebaseId: 200, listItems: [
+                    new ListItem({ id: 21, firebaseId: 201 })
+                ]})
+            ]
+
+            const result = sync.computeListsToSync(LocalLists, [], context.timeMinus4)
+
+            assert.strictEqual(result.items.deletedServer.length, 2)
+            assertListObjectIds(result.items.deletedServer[0], 11, 101)
+            assertListObjectIds(result.items.deletedServer[1], 21, 201)
+            assert.strictEqual(result.items.deletedServer[0].syncStatus, Consts.changeStatus.deleted)
+            assert.strictEqual(result.items.deletedServer[1].syncStatus, Consts.changeStatus.deleted)
+            assertTotalNumberOfListItems(result, 2)
+        })
+
+        it('should compute list items from locally changed lists', () => {
+            const LocalLists = [ new List({
+                id: 1, firebaseId: 100, modifiedAt: context.timeMinus2, syncStatus: Consts.changeStatus.changed,
+                listItems: [
+                    new ListItem({ id: 11, firebaseId: 101, modifiedAt: context.timeMinus3, syncStatus: Consts.changeStatus.changed }),
+                    new ListItem({ id: 12, firebaseId: 102, modifiedAt: context.timeMinus2, syncStatus: Consts.changeStatus.deleted }),
+                    new ListItem({ id: 13, firebaseId: 103, name: 'unchanged' }),
+                    new ListItem({ id: 14, modifiedAt: context.timePlus4, syncStatus: Consts.changeStatus.new })
+                ]
+            })]
+
+            const ServerLists = [new List({
+                id: 100, modifiedAt: context.timeMinus6,
+                listItems: [
+                    new ListItem({ id: 101, modifiedAt: context.timeMinus6 }),
+                    new ListItem({ id: 102, modifiedAt: context.timeMinus6 }),
+                    new ListItem({ id: 103, name: 'unchanged' })
+                ]
+            })]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
+
+            assert.strictEqual(result.items.newLocal.length, 1, 'New local not added')
+            assert.strictEqual(result.items.changedLocal.length, 1, 'Changed local not added')
+            assert.strictEqual(result.items.deletedLocal.length, 1, 'Deleted local not added')
+            assertListObjectIds(result.items.newLocal[0], 14, undefined)
+            assertListObjectIds(result.items.changedLocal[0], 11, 101)
+            assertListObjectIds(result.items.deletedLocal[0], 12, 102)
+            assert.strictEqual(result.items.deletedLocal[0].syncStatus, Consts.changeStatus.deleted)
+            assertTotalNumberOfListItems(result, 3)
+        })
+
+        it('should compute list items from serverside changed lists', () => {
+            const LocalLists = [ new List({
+                id: 1, firebaseId: 100, modifiedAt: context.timeMinus6,
+                listItems: [
+                    new ListItem({ id: 11, firebaseId: 101, modifiedAt: context.timeMinus6 }),
+                    new ListItem({ id: 12, firebaseId: 102, modifiedAt: context.timeMinus6 }),
+                    new ListItem({ id: 13, firebaseId: 103, modifiedAt: context.timeMinus6 })
+                ]
+            })]
+
+            const ServerLists = [new List({
+                id: 100, modifiedAt: context.timePlus1,
+                listItems: [
+                    new ListItem({ id: 101, modifiedAt: context.timeMinus1 }),
+                    new ListItem({ id: 102, name: 'unchanged' }),
+                    new ListItem({ id: 104, name: 'new', modifiedAt: context.timePlus2 })
+                ]
+            })]
+
+            const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
+
+            assert.strictEqual(result.items.newServer.length, 1, 'New server not added')
+            assert.strictEqual(result.items.changedServer.length, 1, 'Changed server not added')
+            assert.strictEqual(result.items.deletedServer.length, 1, 'Deleted server not added')
+            assertListObjectIds(result.items.newServer[0], undefined, 104)
+            assertListObjectIds(result.items.changedServer[0], 11, 101)
+            assertListObjectIds(result.items.deletedServer[0], 13, 103)
+            assert.strictEqual(result.items.deletedServer[0].syncStatus, Consts.changeStatus.deleted)
+            assertTotalNumberOfListItems(result, 3)
+        })
+
+        it('should compute list items from local and serverside changed lists', () => {
+          const LocalLists = [ new List({
+              id: 1, firebaseId: 100, modifiedAt: context.timePlus4,
+              listItems: [
+                  new ListItem({ id: 10, firebaseId: 100, modifiedAt: context.timePlus3, name: 'server changes first', syncStatus: Consts.changeStatus.changed }),
+                  new ListItem({ id: 11, firebaseId: 101, modifiedAt: context.timeMinus1, name: 'first changed wins', syncStatus: Consts.changeStatus.changed }),
+                  new ListItem({ id: 12, firebaseId: 102, modifiedAt: context.timeMinus6 }),
+                  new ListItem({ id: 13, firebaseId: 103, modifiedAt: context.timeMinus2, name: 'deleted server side has preference', syncStatus: Consts.changeStatus.changed }),
+                  new ListItem({ id: 14, firebaseId: 104, modifiedAt: context.timeMinus4, name: 'local delete takes preference', syncStatus: Consts.changeStatus.deleted }),
+                  new ListItem({ id: 15, modifiedAt: context.timePlus1, name: 'new Local', syncStatus: Consts.changeStatus.new })
+              ]
+          })]
+
+          const ServerLists = [new List({
+              id: 100, modifiedAt: context.timePlus1,
+              listItems: [
+                  new ListItem({ id: 100, modifiedAt: context.timeMinus4 }),
+                  new ListItem({ id: 101, modifiedAt: context.timePlus4 }),
+                  new ListItem({ id: 102, name: 'unchanged', modifiedAt: context.timeMinus6 }),
+                  new ListItem({ id: 104, name: 'changed', modifiedAt: context.timePlus2 }),
+                  new ListItem({ id: 106, name: 'new server', modifiedAt: context.timePlus5 })
+              ]
+          })]
+
+          const result = sync.computeListsToSync(LocalLists, ServerLists, context.timeMinus5)
+
+          assert.strictEqual(result.items.newLocal.length, 1, 'New local not added')
+          assert.strictEqual(result.items.newServer.length, 1, 'New server not added')
+          assert.strictEqual(result.items.changedLocal.length, 1, 'Changed local not added')
+          assert.strictEqual(result.items.changedServer.length, 1, 'Changed server not added')
+          assert.strictEqual(result.items.deletedLocal.length, 1, 'Deleted local not added')
+          assert.strictEqual(result.items.deletedServer.length, 1, 'Deleted server not added')
+          assertListObjectIds(result.items.newLocal[0], 15, undefined)
+          assertListObjectIds(result.items.newServer[0], undefined, 106)
+          assertListObjectIds(result.items.changedLocal[0], 11, 101)
+          assertListObjectIds(result.items.changedServer[0], 10, 100)
+          assertListObjectIds(result.items.deletedLocal[0], 14, 104)          
+          assertListObjectIds(result.items.deletedServer[0], 13, 103)
+          assert.strictEqual(result.items.deletedLocal[0].syncStatus, Consts.changeStatus.deleted)          
+          assert.strictEqual(result.items.deletedServer[0].syncStatus, Consts.changeStatus.deleted)
+          assertTotalNumberOfListItems(result, 6)
+      })
     })
 })
 
