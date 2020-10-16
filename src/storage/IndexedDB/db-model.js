@@ -8,6 +8,7 @@ export const model = {
             },
             indexes: [
                 'name',
+                'firebaseId',
                 'description',
                 'type',
                 'subtype',
@@ -23,6 +24,7 @@ export const model = {
             },
             indexes: [
                 'listId',
+                'firebaseId',
                 'name',
                 'priority',
                 'status',

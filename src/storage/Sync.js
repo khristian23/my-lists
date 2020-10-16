@@ -2,6 +2,8 @@ import LocalStorage from './IndexedDB/storage-idb'
 import FirebaseStorage from './Firestore/storage-fire'
 import Firebase from 'firebase'
 import Const from '@/util/constants'
+import List from '@/storage/List'
+import ListItem from '@/storage/ListItem'
 import Profile from './Profile'
 
 export default {
@@ -183,6 +185,7 @@ export default {
                     itemsToDelete.push(item)
                 } else {
                     item.syncStatus = Const.changeStatus.none
+                    item.userId = userId
                     itemsToSave.push(item)
                 }
             })
@@ -194,6 +197,8 @@ export default {
             }))
 
             localList.syncStatus = Const.changeStatus.none
+            localList.userId = userId
+
             await LocalStorage.saveList(userId, localList)
         }
     },
@@ -234,7 +239,30 @@ export default {
     },
 
     async syncAnonymousLocalListsToFirebase (userId) {
+        async function removeFromLocalStorage (listObject) {
+            if (listObject instanceof List) {
+                await LocalStorage.deleteList(userId, listObject.id)
+            } else if (listObject instanceof ListItem) {
+                await LocalStorage.deleteListItem(userId, listObject.id)
+            }
+        }
+
+        async function removeDeletedItemsFromList (list) {
+            let itemRemoved
+
+            for (let i = list.length - 1; i >= 0; i--) {
+                if (list[i].syncStatus === Const.changeStatus.deleted) {
+                    itemRemoved = list.splice(i, 1)
+                    await removeFromLocalStorage(itemRemoved[0])
+                } else if (list[i].listItems) {
+                    await removeDeletedItemsFromList(list[i].listItems)
+                }
+            }
+        }
+
         const localLists = await LocalStorage.getLists(Const.user.anonymous)
+        await removeDeletedItemsFromList(localLists)
+
         await this.syncLocalListToFirebase(userId, localLists)
         return localLists.length
     },
@@ -291,36 +319,38 @@ export default {
 
     async synchronize () {
         try {
-            const user = await this.getFirebaseUser()
-            if (user && !user.isAnonymous) {
-                // Retrieve the last sync timestamp
-                const lastSync = await this.getLastSynchonizationTimeForUser()
-
-                // Record synchronization time after fetching data from server
-                const currentSync = (new Date()).getTime()
-
-                // Synchronize new local item to server
-                let changesCount = await this.syncAnonymousLocalListsToFirebase(user.uid)
-
-                // Retrieve local and remote lists
-                const localLists = await LocalStorage.getLists(user.id)
-                const serverLists = await FirebaseStorage.getLists(user.id)
-
-                // Synchronize changed items to server
-                const computedLists = this.computeListsToSync(localLists, serverLists, lastSync)
-                await this.syncLocalChangesWithFirebase(user.uid, computedLists)
-                changesCount += localLists.length + serverLists.length
-
-                // Record the sync timestamp
-                await this.setLastSynchronizationTime(user.uid, currentSync)
-
-                if (changesCount > 0) {
-                    return true
-                }
-            } else {
+            const user = this.getFirebaseUser()
+            if (!user || user.isAnonymous) {
                 return false
             }
+
+            const userId = user.uid
+
+            const lastSync = await this.getLastSynchonizationTimeForUser(userId)
+
+            // Record synchronization time after fetching data from server
+            const currentSync = (new Date()).getTime()
+
+            // Synchronize new local item to server
+            let changesCount = await this.syncAnonymousLocalListsToFirebase(userId)
+
+            // Retrieve local and remote lists
+            const localLists = await LocalStorage.getLists(userId)
+            const serverLists = await FirebaseStorage.getLists(userId)
+
+            // Synchronize changed items to server
+            const computedLists = this.computeListsToSync(localLists, serverLists, lastSync)
+            await this.syncLocalChangesWithFirebase(userId, computedLists)
+            changesCount += localLists.length + serverLists.length
+
+            // Record the sync timestamp
+            await this.setLastSynchronizationTimeForUser(userId, currentSync)
+
+            if (changesCount > 0) {
+                return true
+            }
         } catch (e) {
+            console.error(e.message)
             return false
         }
     }

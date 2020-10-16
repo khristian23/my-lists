@@ -36,17 +36,11 @@ export default {
         '$auth.user': {
             immediate: true,
             handler (user) {
-                this.onUserChanged(user)
+                this.user = user
             }
         }
     },
     methods: {
-        onUserChanged (user) {
-            this.user = user
-            if (user && user.uid !== this.$Const.user.anonymous) {
-                this.triggerSynchronization()
-            }
-        },
         showToast (message) {
             this.toast = message
             this.$refs.toast.show()

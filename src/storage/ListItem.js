@@ -32,7 +32,7 @@ class ListItem extends ListObject {
     }
 
     toObject () {
-        const keys = ['id', 'name', 'priority', 'modifiedAt', 'status',
+        const keys = ['id', 'listId', 'name', 'priority', 'modifiedAt', 'status',
             'syncStatus', 'firebaseId', 'userId']
         return this._createObject(keys)
     }

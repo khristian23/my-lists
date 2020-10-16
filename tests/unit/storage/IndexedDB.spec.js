@@ -195,6 +195,7 @@ describe('Indexed DB Storage', () => {
         const expectedItemsAsArgs = list.listItems.map(item => {
             const objectItem = item.toObject()
             objectItem.userId = USER_ID
+            objectItem.listId = generatedListId
             delete objectItem.id
             return objectItem
         })
@@ -204,11 +205,11 @@ describe('Indexed DB Storage', () => {
         assert.equal(idbAddObjectStub.withArgs(LIST_ITEM_TABLE).callCount, 2, 'List Item not called twice')
 
         let objectToSave = idbAddObjectStub.firstCall.args[1]
-        assert.deepEqual(objectToSave, expectedObjectAsArg, 'List save called with the right argument')
+        assert.deepStrictEqual(objectToSave, expectedObjectAsArg, 'List save called with the right argument')
         objectToSave = idbAddObjectStub.secondCall.args[1]
-        assert.deepEqual(objectToSave, expectedItemsAsArgs[0], 'List Item save called with the right argument')
+        assert.deepStrictEqual(objectToSave, expectedItemsAsArgs[0], 'First List Item save called with the right argument')
         objectToSave = idbAddObjectStub.thirdCall.args[1]
-        assert.deepEqual(objectToSave, expectedItemsAsArgs[1], 'List Item save called with the right argument')
+        assert.deepStrictEqual(objectToSave, expectedItemsAsArgs[1], 'Second List Item save called with the right argument')
 
         assert.equal(list.id, generatedListId, 'List retrieved generated id')
         assert.equal(list.listItems[0].id, generatedListId + 1, 'First List Item retrieved generated id')
@@ -270,6 +271,7 @@ describe('Indexed DB Storage', () => {
         const expectedItemsAsArgs = list.listItems.map(item => {
             const objectItem = item.toObject()
             objectItem.userId = USER_ID
+            objectItem.listId = generatedListId
             if (!objectItem.id) {
                 delete objectItem.id
             }
@@ -407,7 +409,7 @@ describe('Indexed DB Storage', () => {
         const newItem = items[3].toObject()
         delete newItem.id
         assert.ok(idbUpdateObjectStub.calledWithExactly(LIST_ITEM_TABLE, items[0].toObject()), 'Flag Deleted List Item')
-        assert.ok(idbUpdateObjectStub.neverCalledWith(LIST_ITEM_TABLE, items[1].toObject()), 'Unchanged List Item')
+        assert.ok(idbUpdateObjectStub.calledWithExactly(LIST_ITEM_TABLE, items[1].toObject()), 'Unchanged List Item also updated')
         assert.ok(idbUpdateObjectStub.calledWithExactly(LIST_ITEM_TABLE, items[2].toObject()), 'Change List Item')
         assert.ok(idbAddObjectStub.calledWithExactly(LIST_ITEM_TABLE, newItem), 'New List Item')
         assert.ok(idbDeleteObjectStub.calledWithExactly(LIST_ITEM_TABLE, { id: 34 }), 'Unsync List Item')

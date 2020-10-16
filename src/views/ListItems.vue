@@ -124,7 +124,7 @@ export default {
                 }
             })
         },
-        onTriggerQuickCreate (name) {
+        async onTriggerQuickCreate (name) {
             const listItem = new ListItem({
                 name: name,
                 status: this.$Const.itemStatus.pending,
@@ -133,7 +133,7 @@ export default {
                 modifiedAt: new Date().getTime()
             })
             this.items.push(listItem)
-            this._saveList()
+            await this._saveList()
         },
         onCreate () {
             this.$router.push({ name: this.$Const.routes.listItem, params: { list: this.listId, id: 'new' } })

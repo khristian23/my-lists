@@ -71,7 +71,7 @@ export default {
             throw Error(`List Id: ${listId} is not found`)
         },
         async onListDelete (listId) {
-            const index = this._getListIndexById(listId)
+            const index = this._getListIndexById(parseInt(listId, 10))
             const list = this.lists[index]
 
             const message = 'Are you sure to delete list "' + list.name + '"?'

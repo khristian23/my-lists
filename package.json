@@ -8,7 +8,7 @@
     "build": "node build/build.js",
     "e2e": "cypress run --headed --no-exit",
     "lint": "eslint --ext .js,.vue src",
-    "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
+    "dev": "webpack-dev-server --inline --config build/webpack.dev.conf.js",
     "start": "npm run dev",
     "test": "webpack-dev-server --hot --config tests/unit/webpack.mocha.js"
   },

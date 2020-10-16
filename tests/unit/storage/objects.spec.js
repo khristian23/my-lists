@@ -127,6 +127,7 @@ describe('Objects', function () {
             let timestamp = (new Date()).getTime()
             let listItem = new ListItem({
                 id: 1001,
+                listId: 250,
                 name: 'to name',
                 modifiedAt: timestamp,
                 userId: 'Christian',
@@ -135,6 +136,7 @@ describe('Objects', function () {
             let actualObject = JSON.stringify(listItem.toObject())
             let expectedObject = JSON.stringify({
                 id: 1001,
+                listId: 250,
                 name: 'to name',
                 priority: 0,
                 modifiedAt: timestamp,

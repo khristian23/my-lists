@@ -69,14 +69,14 @@ export default {
 
         await this._saveObject('list', userId, list)
 
-        list.listItems.forEach(async item => {
+        for (const item of list.listItems) {
             item.listId = list.id
             if (item.syncStatus === Consts.changeStatus.deleted && !item.firebaseId) {
                 await this.deleteListItem(userId, item.id)
-            } else if (item.syncStatus) {
+            } else {
                 await this.saveListItem(userId, item)
             }
-        })
+        }
     },
 
     async saveLists (userId, lists) {

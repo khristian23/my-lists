@@ -19,18 +19,18 @@ export default {
             const userRef = firestore.collection('users').doc(userId)
             const listsRef = userRef.collection('lists')
 
-            if (firebaseList.firebaseId) {
-                const listRef = listsRef.doc(firebaseList.firebaseId)
+            if (list.firebaseId) {
+                const listRef = listsRef.doc(list.firebaseId)
                 await listRef.set(firebaseList)
             } else {
                 const docRef = await listsRef.add(firebaseList)
-                firebaseList.firebaseId = docRef.id
+                list.firebaseId = docRef.id
             }
         } catch (e) {
             throw new Error(e.message)
         }
 
-        return firebaseList.firebaseId
+        return list.firebaseId
     },
 
     async saveListItem (userId, firebaseListId, listItem) {
@@ -41,18 +41,18 @@ export default {
             const listRef = userRef.collection('lists').doc(firebaseListId)
             const itemsRef = listRef.collection('items')
 
-            if (firebaseListItem.firebaseId) {
-                const itemRef = itemsRef.doc(firebaseListItem.firebaseId)
+            if (listItem.firebaseId) {
+                const itemRef = itemsRef.doc(listItem.firebaseId)
                 await itemRef.set(firebaseListItem)
             } else {
                 const docRef = await itemsRef.add(firebaseListItem)
-                firebaseListItem.firebaseId = docRef.id
+                listItem.firebaseId = docRef.id
             }
         } catch (e) {
             throw new Error(e.message)
         }
 
-        return firebaseListItem.firebaseId
+        return listItem.firebaseId
     },
 
     async getLists (userId) {
@@ -66,7 +66,7 @@ export default {
             list.id = firebaseList.id
 
             const items = await listsCollection.doc(list.id).collection('items').get()
-            for (const item in items.docs) {
+            for (const item of items.docs) {
                 const listItem = new ListItem(item.data())
                 listItem.id = item.id
                 listItem.listId = list.id
@@ -83,16 +83,16 @@ export default {
         const listRef = userRef.collection('lists').doc(firebaseId)
         const items = await listRef.collection('items').get()
 
-        for (const item in items.docs) {
-            await item.delete()
+        for (const item of items.docs) {
+            await item.ref.delete()
         }
 
         return listRef.delete()
     },
 
-    async deleteListItem (userId, firebaseId, firebaseItemId) {
+    async deleteListItem (userId, firebaseListId, firebaseItemId) {
         const userRef = firestore.collection('users').doc(userId)
-        const listRef = userRef.collection('lists').doc(firebaseId)
+        const listRef = userRef.collection('lists').doc(firebaseListId)
         const itemRef = listRef.collection('items').doc(firebaseItemId)
         return itemRef.delete()
     }
