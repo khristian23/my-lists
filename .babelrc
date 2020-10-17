@@ -7,10 +7,10 @@
       "development": {
         "sourceMaps": true,
         "retainLines": true
-      },
-      "exclude": ["transform-regenerator"]
+      }
+      // "exclude": ["transform-regenerator"]
     }],
     "stage-2"
   ],
-  "plugins": ["transform-vue-jsx"]
+  "plugins": ["transform-vue-jsx", "transform-regenerator"]
 }
