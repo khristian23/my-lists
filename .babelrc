@@ -1,16 +1,15 @@
 {
   "presets": [
-    ["env", {
-      "targets": {
-        "browsers": ["> 1%", "last 2 versions", "not ie <= 8"]
-      },
-      "development": {
-        "sourceMaps": true,
-        "retainLines": true
-      }
+    ["@babel/preset-env", {
+      "targets": "> 0.25%, not dead",
+      "include": ["node_modules/@ui5"]
       // "exclude": ["transform-regenerator"]
-    }],
-    "stage-2"
+    }]
   ],
-  "plugins": ["transform-vue-jsx", "transform-regenerator"]
+  "plugins": [
+    "@vue/babel-plugin-transform-vue-jsx", 
+    "@babel/plugin-transform-regenerator",
+    "@babel/plugin-proposal-object-rest-spread",
+    "@babel/plugin-transform-spread"
+  ]
 }

@@ -51,7 +51,11 @@ module.exports = {
             {
                 test: /\.js$/,
                 loader: 'babel-loader',
-                include: [resolve('src'), resolve('test'), resolve('node_modules/webpack-dev-server/client')]
+                options: {
+                    presets: ['@babel/preset-env']
+                },
+                exclude: /node_modules\/(?!(@ui5))/,
+                include: [resolve('src'), resolve('test'), resolve('node_modules/webpack-dev-server/client'), resolve('node_modules/@ui5')]
             },
             {
                 test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,

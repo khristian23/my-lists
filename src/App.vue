@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import '@ui5/webcomponents-base/dist/features/browsersupport/IE11'
+// import '@ui5/webcomponents-base/dist/features/browsersupport/IE11'
 import Storage from '@/storage/storage'
 import Sync from '@/storage/Sync'
 import '@ui5/webcomponents/dist/Toast'
